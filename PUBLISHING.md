@@ -1,6 +1,6 @@
 # 发布到 DSH 插件市场
 
-> 状态：`0.1.0` 代码与文档就绪，**npm 尚未发布、市场条目尚未提交**。
+> 状态：`0.1.0` 已发布到 npm；市场条目待确认。
 > 包名：`dsh-workbench-panel`
 > 公开仓库：<https://github.com/person-clouds/dsh-workbench-panel>
 > 市场条目：`market/person-clouds__dsh-workbench-panel.yml`
