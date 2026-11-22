@@ -1,9 +1,11 @@
 # 发布到 DSH 插件市场
 
-> 状态：`0.1.1` 待发布（`0.1.0` 已发布；`0.1.1` 为文档与文案修订）；市场条目待提交。
+> 状态：`0.1.1` 已发布（`2026-11-22`，npm `latest=0.1.1`）；市场条目待提交。
 > 包名：`dsh-workbench-panel`
 > 公开仓库：<https://github.com/person-clouds/dsh-workbench-panel>
 > 市场条目：`market/person-clouds__dsh-workbench-panel.yml`
+
+> npm 发布的通用约束与流程见 [doc/specs/npm-publishing.md](/home/zh/www/doc/specs/npm-publishing.md)：本机默认 registry 是华为云镜像，发布/登录/查询必须显式 `--registry=https://registry.npmjs.org`；token 在 `~/.npmrc`；`npm publish` 后 `npm view` 有 3–5 分钟传播延迟。
 
 ## 一、发布前验证
 
