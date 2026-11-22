@@ -16,7 +16,7 @@ npm test
 npm_config_cache=/tmp/npm-cache npm pack --dry-run
 ```
 
-预期：静态检查通过，`npm test` 全绿，打包清单包含 Host/Client 入口、`lib/`、`locale/`、图标、`cordis.patch.yml`、README 与 LICENSE，不含 `test/` 与 `market/`。
+预期：静态检查通过，`npm test` 全绿，打包清单包含 Host/Client 入口、`lib/`、`locale/`、`test/`、图标、`cordis.patch.yml`、README 与 LICENSE，不含 `market/`。
 
 ## 二、公开仓与 topic
 
