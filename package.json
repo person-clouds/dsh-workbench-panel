@@ -1,0 +1,63 @@
+{
+  "name": "dsh-workbench-panel",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "DSH Web 只读工作台：一个侧栏面板查看工作区/会话、仓库文件树与 blob、Markdown 文档索引，并显式归档会话。",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "lib",
+    "locale",
+    "cordis.patch.yml",
+    "icon.svg",
+    "icon.png",
+    "README.md",
+    "README.en.md",
+    "SPEC.md",
+    "STATUS.md",
+    "LICENSE",
+    "test"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true
+    }
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/person-clouds/dsh-workbench-panel.git"
+  },
+  "homepage": "https://github.com/person-clouds/dsh-workbench-panel#readme",
+  "bugs": {
+    "url": "https://github.com/person-clouds/dsh-workbench-panel/issues"
+  },
+  "keywords": [
+    "dsh-plugin",
+    "dsh",
+    "workbench",
+    "workspace",
+    "markdown",
+    "read-only"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/schemastery": "*"
+  }
+}
