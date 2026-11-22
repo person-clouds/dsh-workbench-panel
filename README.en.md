@@ -7,62 +7,39 @@ status: current
 
 # DSH Read-only Workbench (dsh-workbench-panel)
 
-A DSH Web sidebar panel for workspaces and sessions, repository file trees and blobs, Markdown document indexes, and explicit session archiving. Nothing else is written.
+A read-only DSH Web workbench: one sidebar panel for workspaces and sessions, repository file trees and blobs, and Markdown document indexes, with explicit session archiving.
 
-> Unrelated to `lee259/dsh-workbench`: the npm name `dsh-workbench` belongs to another project. This plugin is published as `dsh-workbench-panel`, with its own code and config — not a fork or upgrade of that project.
->
-> Compared with the archived repo `person-clouds/dsh-workbench`, this plugin has no SA tickets, no SA control, no `systemPrompt` injection, no `session/event` listener, and never renames sessions. TODO titles and `/ok` moved to `dsh-workflow-shortcuts` 0.3.0.
+## What matters most
 
-## Panel layout
+- Read-only: never writes user repositories, never runs git write commands, never changes session content; the only write is explicit session archiving.
+- Three tabs: Workspaces for paged sessions with unarchived/archived filters, Docs for the Markdown index and content, Code for file trees and blobs.
+- Works without configuration: with `repos` empty, only workspaces and repos auto-detected from `workspaceRegistry` are shown.
+- Unrelated to the npm `dsh-workbench` package (`lee259/dsh-workbench`); this plugin has no SA tickets or control, injects no prompts, listens to no `session/event`, and never renames sessions.
+- Requirements: DSH Web, Node ≥22.5 (`engines`).
 
-Sidebar icon (id `dsh-workbench-panel`, label “DSH 工作台”) → `main` slot:
-
-```text
-[Workspaces] [Docs] [Code]
-```
-
-| Tab | Content |
-|---|---|
-| Workspaces | Reads workspaces and sessions from `ctx.workspaceRegistry`; sessions default to **unarchived**, with an unarchived/archived/all switch; paged workspace cards; archiving is the only write |
-| Docs | Picks a repo from `docRepos`, then loads that repo's Markdown index on demand; folders start collapsed and expand level by level; a document opens as a blob |
-| Code | Repos from the plugin's `repos` config plus repos auto-detected from `workspaceRegistry`; one-level file tree, read-only blobs; `git` and `worktree` modes |
-
-## Data sources
-
-| Data | Source | Notes |
-|---|---|---|
-| Workspaces, session ownership | `ctx.workspaceRegistry` | Same source as the DSH Web UI; ungrouped is computed on the Host |
-| Session titles | DSH projection cache + `ctx.sessionQuery` + permanent title cache | Only current-page misses are hydrated; cached at `<dshHome>/state/workbench/session-titles.json` |
-| Document index | `docRepos` (derived from `repos` + workspaces) | Read-only Markdown files, grouped by repo |
-| Repos and code | Plugin `repos` + `workspaceRegistry` workspaces | Deduplicated by real path; `mode=git` reads git objects, `mode=worktree` reads workspace files |
-| Explicit archive | `workspaceRegistry.archiveSession()` | Called only when the user archives; never deletes session logs or directories |
-
-No SA database (`orchestrator.sqlite`), no SA ticket/control views, and no background fetch or cleanup loops.
-
-## Host API
-
-- `GET /dsh-workbench-panel/api?view=...`, where `view` is one of `workspaces`, `sessions`, `docRepos`, `docs`, `repos`, `repoSessions`, `tree`, `blob`;
-- Lists use `offset`/`limit` (max 50) and return `total`/`hasMore`; sessions default to `archived=active`;
-- `tree`/`blob` take `repo=<id>&path=`; `docs` accepts `repo=<id>` to read a single repo;
-- The only write: `POST /dsh-workbench-panel/api/archive` with body `{ "sessionId": "..." }`; archiving is idempotent;
-- In-process snapshot cache `cacheSeconds` (default 10 seconds), never persisted;
-- Authentication and origin checks reuse DSH Connection: 401 unauthenticated, 403 untrusted origin.
-
-## Install
-
-```bash
-# Local development: install a link in the web profile
-# (equivalent to running pnpm add link:... inside that profile)
-dsh plugin --profile web add link:/home/zh/www/dsh-workbench-panel
-```
-
-Published npm package:
+## Quick start
 
 ```bash
 dsh plugin --profile web add dsh-workbench-panel
 ```
 
-Restart `dsh web` after installing; the “DSH 工作台” icon appears in the sidebar. Uninstall through the plugin manager; the checkout is kept.
+After restarting `dsh web`, the “DSH 工作台” icon (id `dsh-workbench-panel`) appears in the sidebar with three tabs:
+
+```text
+[Workspaces] [Docs] [Code]
+```
+
+Uninstall it through the plugin manager; the checkout is kept. For local link installs and the release flow, see [`PUBLISHING.md`](/home/zh/www/dsh-workbench-panel/PUBLISHING.md).
+
+## Features
+
+1. **Workspaces**: reads workspaces and sessions from `ctx.workspaceRegistry`; sessions default to unarchived, switchable to archived/all; paged workspace cards, with an ungrouped bucket.
+2. **Docs**: pick a repo from `docRepos`, then load that repo's Markdown index on demand; folders start collapsed and expand level by level; a document opens as a read-only blob.
+3. **Code**: repos from the plugin's `repos` config plus repos auto-detected from `workspaceRegistry`; the file tree loads level by level and blobs are read-only, in `git` or `worktree` mode.
+4. **Explicit archive**: a two-step confirmation on a session card calls `workspaceRegistry.archiveSession()`; idempotent, and never deletes session logs or directories.
+5. **Read-only API**: `GET /dsh-workbench-panel/api?view=...` exposes `workspaces`, `sessions`, `docRepos`, `docs`, `repos`, `repoSessions`, `tree`, `blob`; lists use `offset`/`limit` (max 50) and return `total`/`hasMore`.
+6. **Only write**: `POST /dsh-workbench-panel/api/archive` with body `{ "sessionId": "..." }`; authentication and origin checks reuse DSH Connection (401 unauthenticated, 403 untrusted origin).
+7. **Cache**: in-process snapshot cache `cacheSeconds` (default 10 seconds), never persisted; session titles for the current page are hydrated and stored in `<dshHome>/state/workbench/session-titles.json`.
 
 ## Configuration
 
@@ -88,24 +65,17 @@ Edit it in DSH Settings → Plugins → DSH Workbench, or in the profile's `cord
 
 Each `repos` entry requires `id` and `path`; the rest are optional. Workspace paths from `workspaceRegistry` are added automatically, and each real path appears once.
 
-## Verify
+## Boundaries and limits
 
-```bash
-node --check index.js
-node --check client.js
-node -e "new (require('vm').Script)(require('fs').readFileSync('client.js','utf8'))"
-npm test
-npm_config_cache=/tmp/npm-cache npm pack --dry-run
-```
-
-`npm pack --dry-run` should list `index.js`, `client.js`, `lib/`, `locale/`, `icon.svg`, `icon.png`, `cordis.patch.yml`, the READMEs and LICENSE — not `test/` or the market draft.
-
-## Security boundary
-
-- Only the `/dsh-workbench-panel/api` prefix is registered; the only write is explicit session archiving;
-- Never writes user repository files and never runs git write commands; code browsing blocks `.env*`, `.git`, credential directories, `*.pem`/`*.key`/`*.sqlite`/`*.db`, etc.;
+- Only the `/dsh-workbench-panel/api` prefix is registered; the only write is explicit session archiving.
+- Never writes user repository files and never runs git write commands; code browsing blocks `.env*`, `.git`, credential directories, `*.pem`/`*.key`/`*.sqlite`/`*.db`, etc.
 - Reads no credentials; everything renders as React elements, never `innerHTML`.
+- No SA database, no SA ticket/control views, and no background fetch or cleanup loops.
+- The panel depends on DSH Web services such as `webServer`, `workspaceRegistry`, and `sessionQuery`; DSH upgrades may require adaptation.
 
-## Publish
+## Where to look
 
-See [`PUBLISHING.md`](/home/zh/www/dsh-workbench-panel/PUBLISHING.md) for npm, GitHub Release and the DSH plugin marketplace PR; the market entry is [`market/person-clouds__dsh-workbench-panel.yml`](/home/zh/www/dsh-workbench-panel/market/person-clouds__dsh-workbench-panel.yml).
+- Status, capability list and verification commands: [STATUS.md](/home/zh/www/dsh-workbench-panel/STATUS.md)
+- Publishing, releases and the marketplace PR: [PUBLISHING.md](/home/zh/www/dsh-workbench-panel/PUBLISHING.md)
+- Market entry: [market/person-clouds__dsh-workbench-panel.yml](/home/zh/www/dsh-workbench-panel/market/person-clouds__dsh-workbench-panel.yml)
+- License: [MIT](LICENSE)

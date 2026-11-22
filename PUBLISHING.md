@@ -1,6 +1,6 @@
 # 发布到 DSH 插件市场
 
-> 状态：`0.1.0` 已发布到 npm；市场条目待确认。
+> 状态：`0.1.1` 待发布（`0.1.0` 已发布；`0.1.1` 为文档与文案修订）；市场条目待提交。
 > 包名：`dsh-workbench-panel`
 > 公开仓库：<https://github.com/person-clouds/dsh-workbench-panel>
 > 市场条目：`market/person-clouds__dsh-workbench-panel.yml`
@@ -46,7 +46,7 @@ dsh plugin --profile web add dsh-workbench-panel
 # 重启 dsh web，侧栏出现「DSH 工作台」
 ```
 
-npm 发布 72 小时内可 `npm unpublish dsh-workbench-panel@0.1.0`；超时用 `npm deprecate dsh-workbench-panel@0.1.0 "replace with a fixed version"` 并发布补丁版。
+npm 发布 72 小时内可 `npm unpublish dsh-workbench-panel@0.1.1`；超时用 `npm deprecate dsh-workbench-panel@0.1.1 "replace with a fixed version"` 并发布补丁版。
 
 ## 四、GitHub Release（按需）
 
@@ -54,8 +54,8 @@ npm 发布 72 小时内可 `npm unpublish dsh-workbench-panel@0.1.0`；超时用
 
 ```bash
 npm_config_cache=/tmp/npm-cache npm pack --pack-destination release
-mv release/dsh-workbench-panel-0.1.0.tgz release/dsh-workbench-panel.tgz
-gh release create v0.1.0 release/dsh-workbench-panel.tgz
+mv release/dsh-workbench-panel-0.1.1.tgz release/dsh-workbench-panel.tgz
+gh release create v0.1.1 release/dsh-workbench-panel.tgz
 ```
 
 资源名保持无版本号，避免 `releases/latest/download/` 在下一版后 404。

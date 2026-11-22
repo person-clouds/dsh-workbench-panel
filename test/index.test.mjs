@@ -117,7 +117,7 @@ test('插件导出与配置只保留只读工作台需要的字段', () => {
 test('package.json 声明 dsh.bundle 与公开发布信息', async () => {
   const pack = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'))
   assert.equal(pack.name, 'dsh-workbench-panel')
-  assert.equal(pack.version, '0.1.0')
+  assert.match(pack.version, /^0\.1\.\d+$/)
   assert.equal(pack.dsh.bundle.patch, './cordis.patch.yml')
   assert.equal(pack.dsh.client.platform, 'web')
   assert.equal(pack.publishConfig.access, 'public')

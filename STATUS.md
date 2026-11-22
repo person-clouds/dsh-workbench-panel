@@ -1,12 +1,12 @@
 # STATUS — dsh-workbench-panel
 
 - 更新时间：2026-11-22
-- 版本：`0.1.0`（npm `0.1.0` 已于 2026-11-22 发布，`latest` 可查；GitHub Release 未建，市场条目暂不写 `tarball`）
+- 版本：`0.1.1`（npm `0.1.1` 发布后 `latest` 可查；GitHub Release 未建，市场条目不写 `tarball`）
 - 一句话：DSH 只读工作台，三页签查看工作区/会话、Markdown 文档与仓库代码，仅支持显式归档会话。
 - 位置：`/home/zh/www/dsh-workbench-panel`；包名 `dsh-workbench-panel`；公开仓 <https://github.com/person-clouds/dsh-workbench-panel>。
 - 计划：[`PLAN-dsh-workbench-panel.md`](/home/zh/www/doc/plans/PLAN-dsh-workbench-panel.md)、[`SPEC.md`](/home/zh/www/dsh-workbench-panel/SPEC.md)
 
-## 0.1.0 能力
+## 0.1.x 能力
 
 | 能力 | 状态 | 说明 |
 |---|---|---|

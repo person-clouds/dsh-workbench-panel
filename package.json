@@ -1,6 +1,6 @@
 {
   "name": "dsh-workbench-panel",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "DSH Web 只读工作台：一个侧栏面板查看工作区/会话、仓库文件树与 blob、Markdown 文档索引，并显式归档会话。",
   "exports": {
@@ -52,6 +52,7 @@
     "workbench",
     "workspace",
     "markdown",
+    "session",
     "read-only"
   ],
   "publishConfig": {
