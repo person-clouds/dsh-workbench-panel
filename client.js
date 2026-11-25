@@ -71,9 +71,6 @@ const SAWB_ZH = {
   "emptyTree": "这个目录是空的。",
   "fileCount": "{n} 个文件",
   "fileTooLarge": "文件超过 2MB，不在页面内渲染。",
-  "filterActive": "未归档",
-  "filterAllSessions": "全部会话",
-  "filterArchived": "已归档",
   "head": "最新提交",
   "listNext": "下一页",
   "listPrev": "上一页",
@@ -86,7 +83,6 @@ const SAWB_ZH = {
   "navWorkspaces": "工作区",
   "noDocs": "没有可读的 Markdown 文档。",
   "noRepos": "没有可用的仓库。",
-  "noSessions": "没有会话。",
   "openRepo": "浏览仓库",
   "panel": "DSH 工作台",
   "readFailed": "读取失败：{message}",
@@ -94,25 +90,15 @@ const SAWB_ZH = {
   "repoGit": "git 仓库",
   "repoNoGit": "非 git 目录",
   "repoPath": "路径",
-  "repoSessionCount": "{n} 个会话",
-  "repoSessionsHint": "按会话 cwd 匹配当前仓库（含子目录）；默认只显示未归档会话。",
-  "repoSessionsTitle": "仓库会话",
   "repoSourceConfigured": "DSH 配置",
   "repoSourceWorkspace": "工作区自动识别",
   "repoUnavailable": "仓库不可用：{message}",
   "reposHint": "来源为 DSH 插件配置与工作区自动识别。",
   "reposTitle": "仓库",
-  "sessionArchived": "已归档",
-  "sessionPinned": "已 pin",
-  "sessionUntitled": "未命名会话",
-  "ungroupedCount": "{n} 个未分组会话",
-  "ungroupedHint": "不属于任何工作区的 DSH 会话；与工作区页使用同一套会话目录。",
-  "ungroupedTitle": "未分组",
   "workspaceCount": "{n} 个工作区",
   "workspaceCreated": "创建",
   "workspaceMissing": "目录不存在",
   "workspacePath": "路径",
-  "workspaceSessionCount": "{n} 个会话",
   "workspacesHint": "这些记录来自当前 DSH Host 的 workspaceRegistry，是唯一写者。",
   "workspacesTitle": "工作区"
 }
@@ -151,9 +137,6 @@ const SAWB_EN = {
   "fileSwitcher": "Files",
   "fileSwitcherHint": "Hover or click to expand; Alt+1 to toggle",
   "fileTooLarge": "File is larger than 2MB and is not rendered inline.",
-  "filterActive": "Unarchived",
-  "filterAllSessions": "All sessions",
-  "filterArchived": "Archived",
   "head": "Latest commit",
   "listNext": "Next",
   "listPrev": "Prev",
@@ -167,7 +150,6 @@ const SAWB_EN = {
   "navWorkspaces": "Workspaces",
   "noDocs": "No readable Markdown documents.",
   "noRepos": "No repository available.",
-  "noSessions": "No sessions.",
   "notEditable": "This file is not editable (git mode, binary, too large or non-text).",
   "openRepo": "Browse repository",
   "panel": "DSH Workbench",
@@ -177,9 +159,6 @@ const SAWB_EN = {
   "repoGit": "git repository",
   "repoNoGit": "non-git directory",
   "repoPath": "Path",
-  "repoSessionCount": "{n} sessions",
-  "repoSessionsHint": "Matched by session cwd under this repository (including subdirectories); unarchived only by default.",
-  "repoSessionsTitle": "Repository sessions",
   "repoSourceConfigured": "DSH config",
   "repoSourceWorkspace": "Auto-detected workspace",
   "repoUnavailable": "Repository unavailable: {message}",
@@ -201,18 +180,11 @@ const SAWB_EN = {
   "searchScan": "line scan",
   "searchTotal": "{n} matches",
   "searchTruncated": "limit reached",
-  "sessionArchived": "archived",
-  "sessionPinned": "pinned",
-  "sessionUntitled": "Untitled session",
-  "ungroupedCount": "{n} ungrouped sessions",
-  "ungroupedHint": "DSH sessions that belong to no workspace; built from the same session catalog as the workspace cards.",
-  "ungroupedTitle": "Ungrouped",
   "unsavedConfirm": "Unsaved changes will be discarded. Continue?",
   "workspaceCount": "{n} workspaces",
   "workspaceCreated": "Created",
   "workspaceMissing": "Directory missing",
   "workspacePath": "Path",
-  "workspaceSessionCount": "{n} sessions",
   "workspacesHint": "These records come from the current DSH Host workspaceRegistry, the only writer.",
   "workspacesTitle": "Workspaces"
 }
@@ -322,17 +294,6 @@ const SAWB_CSS = `
 .sawb-kv dd { margin: 0; overflow-wrap: anywhere; }
 .sawb-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
 .sawb-chip { border: 1px solid var(--dsw-alias-border-l1); border-radius: 999px; padding: 0 8px; font-size: 11px; color: var(--dsw-alias-label-secondary); }
-.sawb-session-list { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
-.sawb-session-archive { margin-left: auto; border: 1px solid var(--dsw-alias-border-l2); border-radius: 6px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: 11px; line-height: 18px; padding: 0 6px; cursor: pointer; white-space: nowrap; }
-.sawb-session-archive[aria-confirm="true"] { color: var(--dsw-alias-state-error-primary, #c62828); border-color: currentColor; }
-.sawb-session-archive:disabled { opacity: 0.6; cursor: default; }
-.sawb-session { display: flex; align-items: center; gap: 8px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 7px; padding: 5px 8px; min-width: 0; background: var(--dsw-alias-bg-base); }
-.sawb-session-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
-.sawb-session-id { flex: 0 1 32%; margin-left: auto; font-family: var(--dsw-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: 11px; color: var(--dsw-alias-label-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 32%; }
-.sawb-session-more .sawb-meta { margin-right: auto; }
-.sawb-session-page { min-width: 24px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 6px; padding: 1px 6px; background: transparent; color: var(--dsw-alias-label-secondary); font: inherit; font-size: 11px; cursor: pointer; }
-.sawb-session-page:hover { background: var(--dsw-alias-bg-layer-2); }
-.sawb-session-page[aria-pressed="true"] { color: var(--dsw-alias-label-primary); border-color: var(--dsw-alias-brand-primary); background: var(--dsw-alias-bg-layer-2); }
 .sawb-pager { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; width: 100%; max-width: 1360px; margin: 16px auto 0; }
 .sawb-pager .sawb-meta { margin-right: auto; }
 .sawb-pager button:disabled { opacity: .45; cursor: default; }
@@ -341,7 +302,6 @@ const SAWB_CSS = `
 .sawb-doc-repo:hover { border-color: var(--dsw-alias-brand-primary); background: var(--dsw-alias-bg-layer-2); }
 .sawb-doc-repo strong { font-size: 13px; }
 .sawb-doc-repo .sawb-meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
-.sawb-card.sawb-ungrouped { border-style: dashed; }
 .sawb-doc-tree { padding: 6px 0; }
 .sawb-doc-folder { display: flex; align-items: center; gap: 6px; width: 100%; border: 0; background: transparent; color: inherit; font: inherit; padding: 5px 16px; cursor: pointer; text-align: left; }
 .sawb-doc-folder:hover { background: var(--dsw-alias-bg-layer-2); }
@@ -649,97 +609,6 @@ window.__ModuleLoader__.load({
           h('button', { type: 'button', onClick: () => onPath(parts.slice(0, index + 1).join('/')) }, part))))
     }
 
-    /** 会话列表：显示标题，id 作为尾注；无标题时给出可读占位。 */
-    function sessionName(session, t) {
-      if (session.title) return session.title
-      return `${t('sessionUntitled')} · ${session.id.slice(0, 12)}`
-    }
-
-    const SESSION_PAGE_SIZE = 10
-
-    /** 会话列表只接收当前页预览；更多页从服务端按工作区/归档筛选加载。 */
-    function SessionList({ sessions, t, collapsible = false, total, workspaceId, repoId, archived = 'active' }) {
-      const source = sessions || []
-      const [items, setItems] = React.useState(source)
-      const [page, setPage] = React.useState(1)
-      const [totalCount, setTotalCount] = React.useState(Number(total) || source.length)
-      const [loading, setLoading] = React.useState(false)
-      const [error, setError] = React.useState('')
-      const [confirmId, setConfirmId] = React.useState('')
-      const [busyId, setBusyId] = React.useState('')
-      const [notice, setNotice] = React.useState({ text: '', error: false })
-      React.useEffect(() => {
-        setItems(source)
-        setPage(1)
-        setTotalCount(Number(total) || source.length)
-        setError('')
-        setConfirmId('')
-        setNotice({ text: '', error: false })
-      }, [source, total])
-      // 两步确认：第一次点击只进入确认态，第二次才真正归档。
-      const archive = session => {
-        if (confirmId !== session.id) {
-          setConfirmId(session.id)
-          setNotice({ text: '', error: false })
-          return
-        }
-        setConfirmId('')
-        setBusyId(session.id)
-        postApi('/archive', { sessionId: session.id })
-          .then(() => {
-            setItems(list => list.filter(item => item.id !== session.id))
-            setTotalCount(count => Math.max(0, count - 1))
-            setNotice({ text: t('archiveDone'), error: false })
-          })
-          .catch(failure => setNotice({ text: t('archiveFailed', { message: errorText(failure) }), error: true }))
-          .finally(() => setBusyId(''))
-      }
-      if (totalCount === 0) return h('div', { className: 'sawb-meta', style: { marginTop: 8 } }, t('noSessions'))
-      const changePage = next => {
-        setPage(next)
-        if ((!workspaceId && !repoId) || next === 1) {
-          setItems(source)
-          return
-        }
-        setLoading(true)
-        setError('')
-        const params = repoId
-          ? { view: 'repoSessions', repo: repoId, offset: (next - 1) * SESSION_PAGE_SIZE, limit: SESSION_PAGE_SIZE, archived, sort: 'createdAt', dir: 'desc' }
-          : { view: 'sessions', workspace: workspaceId, offset: (next - 1) * SESSION_PAGE_SIZE, limit: SESSION_PAGE_SIZE, archived, sort: 'createdAt', dir: 'desc' }
-        loadApi(params)
-          .then(data => {
-            setItems(data.sessions || [])
-            setTotalCount(Number(data.total) || 0)
-          })
-          .catch(failure => setError(errorText(failure)))
-          .finally(() => setLoading(false))
-      }
-      return h(React.Fragment, null,
-        h('div', { className: 'sawb-session-list' }, items.map(session => {
-          const name = sessionName(session, t)
-          return h('div', { key: session.id, className: 'sawb-session', title: [name, session.id, session.cwd || ''].filter(Boolean).join('\n') },
-            session.archived ? badge(t('sessionArchived'), 'muted') : null,
-            session.pinned ? badge(t('sessionPinned'), 'muted') : null,
-            h('span', { className: 'sawb-session-name', title: name }, name),
-            h('span', { className: 'sawb-session-id' }, session.id),
-            session.archived ? null : h('button', {
-              type: 'button',
-              className: 'sawb-session-archive',
-              'aria-confirm': String(confirmId === session.id),
-              disabled: busyId === session.id,
-              title: t('archiveSession'),
-              onClick: () => archive(session),
-            }, busyId === session.id ? '…' : confirmId === session.id ? t('archiveConfirm') : t('archiveSession')))
-        })),
-        loading ? h('div', { className: 'sawb-meta' }, t('loadingData')) : null,
-        error ? h(Notice, { tone: 'error' }, t('readFailed', { message: error })) : null,
-        notice.text ? h(Notice, { tone: notice.error ? 'error' : undefined }, notice.text) : null,
-        collapsible && totalCount > SESSION_PAGE_SIZE
-          ? h(Pagination, { page, pageSize: SESSION_PAGE_SIZE, total: totalCount, t, onChange: changePage })
-          : null)
-    }
-
-    /** 搜索框：只在当前仓库内检索，结果带 path:line，点击打开文件并定位行。 */
     function SearchPanel({ t, repoId, onOpen }) {
       const [q, setQ] = React.useState('')
       const [mode, setMode] = React.useState('both')
@@ -836,32 +705,14 @@ window.__ModuleLoader__.load({
     function CodeView({ t, section, onSection, onOpenFile }) {
       const [route, setRoute] = React.useState({ kind: 'repos', repo: undefined, path: '', line: 0 })
       const [repoPage, setRepoPage] = React.useState(1)
-      const [treePage, setTreePage] = React.useState(1)
       const [state, setState] = React.useState({ phase: 'loading', data: undefined, error: '' })
-      const [repoSessions, setRepoSessions] = React.useState({ phase: 'idle', data: undefined, error: '' })
 
-      React.useEffect(() => { setTreePage(1) }, [route])
-      React.useEffect(() => {
-        if (route.kind !== 'tree' || route.path) {
-          setRepoSessions({ phase: 'idle', data: undefined, error: '' })
-          return undefined
-        }
-        const controller = new AbortController()
-        setRepoSessions({ phase: 'loading', data: undefined, error: '' })
-        loadApi({ view: 'repoSessions', repo: route.repo.id, offset: 0, limit: SESSION_PAGE_SIZE, archived: 'active', sort: 'createdAt', dir: 'desc' }, controller.signal)
-          .then(data => setRepoSessions({ phase: 'ready', data, error: '' }))
-          .catch(error => {
-            if (error && error.name === 'AbortError') return
-            setRepoSessions({ phase: 'error', data: undefined, error: errorText(error) })
-          })
-        return () => controller.abort()
-      }, [route])
       React.useEffect(() => {
         const controller = new AbortController()
         setState({ phase: 'loading', data: undefined, error: '' })
         const params = route.kind === 'repos'
           ? { view: 'repos', offset: String((repoPage - 1) * REPO_PAGE_SIZE), limit: String(REPO_PAGE_SIZE), sort: 'updatedAt', dir: 'desc' }
-          : { view: 'tree', repo: route.repo.id, path: route.path, offset: (treePage - 1) * LIST_PAGE_SIZE, limit: LIST_PAGE_SIZE }
+          : { view: 'tree', repo: route.repo.id, path: route.path }
         loadApi(params, controller.signal)
           .then(data => setState({ phase: 'ready', data, error: '' }))
           .catch(error => {
@@ -869,7 +720,7 @@ window.__ModuleLoader__.load({
             setState({ phase: 'error', data: undefined, error: errorText(error) })
           })
         return () => controller.abort()
-      }, [route, repoPage, treePage])
+      }, [route, repoPage])
 
       const openRepo = repo => setRoute({ kind: 'tree', repo, path: '', line: 0 })
       const openTree = (repo, path) => setRoute({ kind: 'tree', repo, path, line: 0 })
@@ -894,38 +745,22 @@ window.__ModuleLoader__.load({
         const data = state.data
         const entries = data.entries || []
         const dirs = entries.filter(item => item.type === 'dir').length
-        const totalEntries = Number(data.total) || entries.length
         content = h(React.Fragment, null,
           h('div', { className: 'sawb-file-head' },
             h('button', { type: 'button', className: 'sawb-btn', onClick: () => { setRepoPage(1); setRoute({ kind: 'repos', repo: undefined, path: '', line: 0 }) } }, `← ${t('backToRepos')}`),
             h('button', { type: 'button', className: 'sawb-btn', onClick: () => openTree(route.repo, '') }, t('repoPath')),
-            h('span', { className: 'sawb-meta' }, t('dirCount', { n: dirs }) + ' · ' + t('fileCount', { n: entries.length - dirs }) + ` / ${totalEntries}`)),
+            h('span', { className: 'sawb-meta' }, t('dirCount', { n: dirs }) + ' · ' + t('fileCount', { n: entries.length - dirs }))),
           h(Breadcrumbs, { repo: route.repo, path: data.path || '', t, onRoot: () => openTree(route.repo, ''), onPath: path => openTree(route.repo, path) }),
           !data.path ? h(SearchPanel, { key: `search:${route.repo.id}`, t, repoId: route.repo.id, onOpen: openHit }) : null,
-          !data.path ? h('section', { className: 'sawb-section' },
-            h('h3', null, t('repoSessionsTitle'), ' ', repoSessions.data ? badge(t('repoSessionCount', { n: repoSessions.data.total }), 'muted') : null),
-            h('p', { className: 'sawb-meta' }, t('repoSessionsHint')),
-            repoSessions.phase === 'error'
-              ? h(Notice, { tone: 'error' }, t('readFailed', { message: repoSessions.error }))
-              : repoSessions.phase === 'loading' && !repoSessions.data
-                ? h('div', { className: 'sawb-meta' }, t('loadingData'))
-                : repoSessions.data
-                  ? h(SessionList, {
-                      key: `repo:${route.repo.id}`, sessions: repoSessions.data.sessions || [], total: repoSessions.data.total,
-                      repoId: route.repo.id, archived: 'active', t, collapsible: true,
-                    })
-                  : null) : null,
           entries.length === 0
             ? h('div', { className: 'sawb-empty' }, t('emptyTree'))
-            : h(React.Fragment, null,
-                h('div', { className: 'sawb-tree' }, entries.map(entry => h('button', {
-                  key: entry.path, type: 'button', className: 'sawb-tree-row',
-                  onClick: () => entry.type === 'dir' ? openTree(route.repo, entry.path) : openBlob(route.repo, entry.path),
-                },
-                  h('span', { className: 'sawb-tree-icon', 'aria-hidden': true }, entry.type === 'dir' ? '▸' : '·'),
-                  h('span', { className: 'sawb-tree-name' }, entry.name + (entry.type === 'dir' ? '/' : '')),
-                  h('span', { className: 'sawb-meta' }, entry.type === 'dir' ? '' : (entry.lang || ''))))),
-                h(Pagination, { page: treePage, pageSize: LIST_PAGE_SIZE, total: totalEntries, t, onChange: setTreePage })))
+            : h('div', { className: 'sawb-tree' }, entries.map(entry => h('button', {
+                key: entry.path, type: 'button', className: 'sawb-tree-row',
+                onClick: () => entry.type === 'dir' ? openTree(route.repo, entry.path) : openBlob(route.repo, entry.path),
+              },
+                h('span', { className: 'sawb-tree-icon', 'aria-hidden': true }, entry.type === 'dir' ? '▸' : '·'),
+                h('span', { className: 'sawb-tree-name' }, entry.name + (entry.type === 'dir' ? '/' : '')),
+                h('span', { className: 'sawb-meta' }, entry.type === 'dir' ? '' : (entry.lang || ''))))))
       }
 
       return h(React.Fragment, null,
@@ -1089,20 +924,19 @@ window.__ModuleLoader__.load({
     }
 
 
-    /** 工作区页：DSH Host 是 workspace.json 的唯一写者，这里只读展示工作区与未分组。 */
+    /** 工作区页：DSH Host 是 workspace.json 的唯一写者，这里只读展示工作区（不展示会话）。 */
     function WorkspacesView({ t, section, onSection }) {
       const [state, setState] = React.useState({ phase: 'loading', data: undefined, error: '' })
-      const [archived, setArchived] = React.useState('active')
       const [page, setPage] = React.useState(1)
       const load = React.useCallback(signal => {
         setState(previous => ({ phase: 'loading', data: previous.data, error: '' }))
-        loadApi({ view: 'workspaces', offset: (page - 1) * 8, limit: 8, archived, sessionLimit: 10, sort: 'updatedAt', dir: 'desc' }, signal)
+        loadApi({ view: 'workspaces', offset: (page - 1) * 8, limit: 8, sort: 'updatedAt', dir: 'desc' }, signal)
           .then(data => setState({ phase: 'ready', data, error: '' }))
           .catch(error => {
             if (error && error.name === 'AbortError') return
             setState({ phase: 'error', data: undefined, error: errorText(error) })
           })
-      }, [page, archived])
+      }, [page])
       React.useEffect(() => {
         const controller = new AbortController()
         load(controller.signal)
@@ -1110,21 +944,14 @@ window.__ModuleLoader__.load({
       }, [load])
       const data = state.data
       const workspaces = (data && data.workspaces) || []
-      const ungrouped = (data && data.ungrouped) || { sessions: [], sessionTotal: 0 }
       const totalWorkspaces = Number(data && data.total) || 0
-      const totalSessions = Number(data && data.counts && data.counts.sessions) || 0
-      const filters = [['active', t('filterActive')], ['archived', t('filterArchived')], ['all', t('filterAllSessions')]]
       return h(React.Fragment, null,
         h('div', { className: 'sawb-head' },
           h('h2', { className: 'sawb-title' }, t('workspacesTitle')),
           h('span', { className: 'sawb-meta' }, t('workspacesHint')),
           h('span', { className: 'sawb-spacer' }),
-          h('span', { className: 'sawb-meta' }, `${t('workspaceCount', { n: totalWorkspaces })} · ${t('workspaceSessionCount', { n: totalSessions })}`),
+          h('span', { className: 'sawb-meta' }, t('workspaceCount', { n: totalWorkspaces })),
           h(Tabs, { section, t, onSection }),
-          filters.map(([value, label]) => h('button', {
-            key: value, type: 'button', className: 'sawb-btn', 'aria-pressed': String(archived === value),
-            onClick: () => { setArchived(value); setPage(1) },
-          }, label)),
           h('button', { type: 'button', className: 'sawb-btn', onClick: () => load() }, t('refresh'))),
         h('div', { className: 'sawb-body' },
           state.phase === 'error'
@@ -1132,7 +959,6 @@ window.__ModuleLoader__.load({
             : !data
               ? h('div', { className: 'sawb-empty' }, t('loadingData'))
               : h(React.Fragment, null,
-                  data.sessionError ? h(Notice, null, data.sessionError) : null,
                   h('div', { className: 'sawb-grid' },
                     workspaces.map(workspace => h('article', { key: workspace.id, className: 'sawb-card' },
                       h('h3', null, workspace.title || workspace.id),
@@ -1140,21 +966,7 @@ window.__ModuleLoader__.load({
                         h('dt', null, t('workspacePath')), h('dd', { className: 'sawb-mono', title: workspace.path }, workspace.path),
                         h('dt', null, t('workspaceCreated')), h('dd', null, when(workspace.createdAt))),
                       workspace.exists === false ? h(Notice, { tone: 'error' }, t('workspaceMissing')) : null,
-                      h('div', { className: 'sawb-chips' },
-                        h('span', { className: 'sawb-chip' }, t('workspaceSessionCount', { n: workspace.sessionTotal })),
-                        workspace.git ? h('span', { className: 'sawb-chip' }, t('repoGit')) : null),
-                      h(SessionList, {
-                        key: `${workspace.id}:${archived}`, sessions: workspace.sessions, total: workspace.sessionTotal,
-                        workspaceId: workspace.id, archived, t, collapsible: true,
-                      }))),
-                    h('article', { key: '__ungrouped', className: 'sawb-card sawb-ungrouped' },
-                      h('h3', null, t('ungroupedTitle')),
-                      h('p', { className: 'sawb-meta' }, t('ungroupedHint')),
-                      h('div', { className: 'sawb-chips' }, h('span', { className: 'sawb-chip' }, t('ungroupedCount', { n: ungrouped.sessionTotal }))),
-                      h(SessionList, {
-                        key: `ungrouped:${archived}`, sessions: ungrouped.sessions, total: ungrouped.sessionTotal,
-                        workspaceId: 'ungrouped', archived, t, collapsible: true,
-                      }))),
+                      workspace.git ? h('div', { className: 'sawb-chips' }, h('span', { className: 'sawb-chip' }, t('repoGit'))) : null))),
                   h(Pagination, { page, pageSize: 8, total: totalWorkspaces, t, onChange: setPage }))))
     }
 

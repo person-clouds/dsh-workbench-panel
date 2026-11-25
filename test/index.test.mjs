@@ -170,6 +170,16 @@ test('workspaces 视图在空仓库表下返回空列表', async () => {
   const res = await handle(routes[0], request('/dsh-workbench-panel/api?view=workspaces'))
   assert.equal(res.status, 200)
   assert.deepEqual(res.body.workspaces, [])
+  assert.equal(Object.hasOwn(res.body, 'ungrouped'), false)
+})
+
+test('面板不再提供会话视图（sessions / repoSessions 已下线）', async () => {
+  const { ctx, routes } = fakeContext()
+  apply(ctx, new Config({}))
+  for (const view of ['sessions', 'repoSessions']) {
+    const res = await handle(routes[0], request(`/dsh-workbench-panel/api?view=${view}`))
+    assert.match(res.body.error, /未知视图/, `${view} 视图应已下线`)
+  }
 })
 
 test('归档只接受 POST，且重复归档保持幂等', async () => {

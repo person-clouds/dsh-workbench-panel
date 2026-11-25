@@ -7,19 +7,20 @@ status: current
 
 ## 目标
 
-把 DSH 的工作区/会话、仓库文件树与 blob、Markdown 文档索引收进同一个 Web 侧栏面板，并提供仓库内搜索、只读高亮与**受开关约束的单文件编辑**，以及显式会话归档。不新开端口、不启动第二个 DSH Host。
+把 DSH 的工作区、仓库文件树与 blob、Markdown 文档索引收进同一个 Web 侧栏面板，并提供仓库内搜索、只读高亮与**受开关约束的单文件编辑**，以及显式会话归档。不新开端口、不启动第二个 DSH Host。
 
 ## 用户
 
-- 在 DSH Web 里浏览工作区、会话与仓库内容的个人开发者；
-- 需要从侧栏快速查文档、看代码、清理已结束会话，但不需要 SA 工单与运行控制的用户。
+- 在 DSH Web 里浏览工作区与仓库内容的个人开发者；
+- 需要从侧栏快速查文档、看代码，但不需要 SA 工单与运行控制的用户。
 
 ## 范围
 
-- Host 端：注册 `/dsh-workbench-panel/api`，读取 `ctx.workspaceRegistry`、`ctx.sessionQuery`、git 对象与工作区文件；写操作只有三类：显式归档会话、`POST /api/write` 覆盖单个工作区文本文件、`POST /api/revert` 用 git 恢复单文件（后两者受 `writeEnabled` 约束）。
+- Host 端：注册 `/dsh-workbench-panel/api`，读取 `ctx.workspaceRegistry`、git 对象与工作区文件（面板视图不读 `ctx.sessionQuery`）；写操作只有三类：显式归档会话、`POST /api/write` 覆盖单个工作区文本文件、`POST /api/revert` 用 git 恢复单文件（后两者受 `writeEnabled` 约束）。
 - Client 端：侧栏图标 `dsh-workbench-panel`（中文名「DSH 工作台」）→ `main` 槽位，三个页签：工作区 / 文档 / 代码。
-- 列表统一 `offset`/`limit` 服务端分页，返回 `total`/`hasMore`；会话默认只返回未归档。
-- 进程内快照缓存 `cacheSeconds`，不写缓存文件（会话标题缓存除外）。
+- 面板不展示会话：工作区页只列工作区卡片；`sessions`/`repoSessions` 视图已下线，`/api/archive` 保留给脚本与外部调用。
+- 仓库列表与文档仓库列表用 `offset`/`limit` 服务端分页并返回 `total`/`hasMore`；**文件树 `tree` 不分页，每层一次返回全部子项**。
+- 进程内快照缓存 `cacheSeconds`，不写缓存文件。
 
 ## 非目标
 
@@ -39,13 +40,11 @@ status: current
 
 | view | 关键参数 | 返回 |
 |---|---|---|
-| `workspaces` | `offset`、`limit`、`sessionLimit`、`archived` | 工作区卡片与每卡当前页会话、`total`/`hasMore` |
-| `sessions` | `workspace=<id\|ungrouped>`、`offset`、`limit`、`archived` | 该工作区会话页 |
+| `workspaces` | `offset`、`limit`、`sort`、`dir` | 工作区卡片（标题、路径、创建时间、git 标记），`total`/`hasMore` |
 | `docRepos` | `offset`、`limit`、`sort`、`dir` | 文档页可选仓库页 |
 | `docs` | `repo=<id>`（可选） | 按仓库分组的 Markdown 索引（`path`、`title`） |
 | `repos` | `offset`、`limit`、`sort`、`dir` | 代码页仓库页，默认按更新时间倒序 |
-| `repoSessions` | `repo=<id>`、`offset`、`limit`、`archived` | 该仓库关联会话页 |
-| `tree` | `repo=<id>`、`path`、`offset`、`limit`（上限 200） | 单层目录项、`total`/`hasMore` |
+| `tree` | `repo=<id>`、`path` | 该层全部目录项（目录在前）与 `total`；不接受 `offset`/`limit`，无 `hasMore` |
 | `blob` | `repo=<id>`、`path` | 文件内容；超大/二进制返回提示而非内联；附 `mtimeMs`、`editable`、`tokens`（高亮行） |
 | `search` | `repo=<id>`、`q`（2–200 字符）、`mode=name\|content\|both`、`offset`、`limit` | 文件名/内容命中 `{path, line, column, text}`，单次上限 500 条 |
 
@@ -81,7 +80,7 @@ status: current
 
 ## 数据来源与写边界
 
-- 工作区、会话：`ctx.workspaceRegistry`；会话标题来自 DSH 投影缓存、`ctx.sessionQuery` 与永久标题缓存，缓存文件原子写、失败只告警。
+- 工作区：`ctx.workspaceRegistry`（标题、路径、创建时间、`status()`、`.git` 标记）；面板视图不再读取会话目录与标题缓存。
 - 文档、代码：`docRepos`/`repos` 合并结果；按真实路径去重，来源只有「插件配置」与「workspaceRegistry 工作区」。
 - 归档：`workspaceRegistry.archiveSession(sessionId, { stopActivity: true })`，不删除日志与目录，不提供批量归档。
 - 编辑（`lib/write.js`）：只写 `worktree` 模式仓库内的文本文件；前置校验 `cleanRel`（拒绝 `..`/绝对路径）、`isSensitive`、`exclude`、`EXCLUDED_DIRS`、无 NUL、≤2MB、`expectMtimeMs` 乐观锁；同目录临时文件 + `rename` 原子替换；成功后清 `listFiles` 缓存。撤销只对 git 工作区执行 `git checkout -- <path>`。
@@ -108,7 +107,7 @@ npm test
 npm_config_cache=/tmp/npm-cache npm pack --dry-run
 ```
 
-浏览器验收：三页签可切换；工作区会话可过滤；文档索引与正文可读；代码树、搜索与高亮可读；`☰ 文件` 面板与标签条可用；编辑保存后 `git diff` 一致、撤销可恢复；归档后列表状态更新；无 console error。
+浏览器验收：三页签可切换；工作区卡片不出现会话列表；文件树每层全部展示且无分页控件；文档索引与正文可读；代码树、搜索与高亮可读；`☰ 文件` 面板与标签条可用；编辑保存后 `git diff` 一致、撤销可恢复；归档接口幂等（`curl` 校验）；无 console error。
 
 ## 约束
 

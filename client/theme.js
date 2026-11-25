@@ -102,17 +102,6 @@ const SAWB_CSS = `
 .sawb-kv dd { margin: 0; overflow-wrap: anywhere; }
 .sawb-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
 .sawb-chip { border: 1px solid var(--dsw-alias-border-l1); border-radius: 999px; padding: 0 8px; font-size: 11px; color: var(--dsw-alias-label-secondary); }
-.sawb-session-list { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
-.sawb-session-archive { margin-left: auto; border: 1px solid var(--dsw-alias-border-l2); border-radius: 6px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: 11px; line-height: 18px; padding: 0 6px; cursor: pointer; white-space: nowrap; }
-.sawb-session-archive[aria-confirm="true"] { color: var(--dsw-alias-state-error-primary, #c62828); border-color: currentColor; }
-.sawb-session-archive:disabled { opacity: 0.6; cursor: default; }
-.sawb-session { display: flex; align-items: center; gap: 8px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 7px; padding: 5px 8px; min-width: 0; background: var(--dsw-alias-bg-base); }
-.sawb-session-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
-.sawb-session-id { flex: 0 1 32%; margin-left: auto; font-family: var(--dsw-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: 11px; color: var(--dsw-alias-label-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 32%; }
-.sawb-session-more .sawb-meta { margin-right: auto; }
-.sawb-session-page { min-width: 24px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 6px; padding: 1px 6px; background: transparent; color: var(--dsw-alias-label-secondary); font: inherit; font-size: 11px; cursor: pointer; }
-.sawb-session-page:hover { background: var(--dsw-alias-bg-layer-2); }
-.sawb-session-page[aria-pressed="true"] { color: var(--dsw-alias-label-primary); border-color: var(--dsw-alias-brand-primary); background: var(--dsw-alias-bg-layer-2); }
 .sawb-pager { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; width: 100%; max-width: 1360px; margin: 16px auto 0; }
 .sawb-pager .sawb-meta { margin-right: auto; }
 .sawb-pager button:disabled { opacity: .45; cursor: default; }
@@ -121,7 +110,6 @@ const SAWB_CSS = `
 .sawb-doc-repo:hover { border-color: var(--dsw-alias-brand-primary); background: var(--dsw-alias-bg-layer-2); }
 .sawb-doc-repo strong { font-size: 13px; }
 .sawb-doc-repo .sawb-meta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
-.sawb-card.sawb-ungrouped { border-style: dashed; }
 .sawb-doc-tree { padding: 6px 0; }
 .sawb-doc-folder { display: flex; align-items: center; gap: 6px; width: 100%; border: 0; background: transparent; color: inherit; font: inherit; padding: 5px 16px; cursor: pointer; text-align: left; }
 .sawb-doc-folder:hover { background: var(--dsw-alias-bg-layer-2); }

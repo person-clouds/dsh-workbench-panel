@@ -149,20 +149,19 @@ function DocsView({ t, section, onSection }) {
 }
 
 
-/** 工作区页：DSH Host 是 workspace.json 的唯一写者，这里只读展示工作区与未分组。 */
+/** 工作区页：DSH Host 是 workspace.json 的唯一写者，这里只读展示工作区（不展示会话）。 */
 function WorkspacesView({ t, section, onSection }) {
   const [state, setState] = React.useState({ phase: 'loading', data: undefined, error: '' })
-  const [archived, setArchived] = React.useState('active')
   const [page, setPage] = React.useState(1)
   const load = React.useCallback(signal => {
     setState(previous => ({ phase: 'loading', data: previous.data, error: '' }))
-    loadApi({ view: 'workspaces', offset: (page - 1) * 8, limit: 8, archived, sessionLimit: 10, sort: 'updatedAt', dir: 'desc' }, signal)
+    loadApi({ view: 'workspaces', offset: (page - 1) * 8, limit: 8, sort: 'updatedAt', dir: 'desc' }, signal)
       .then(data => setState({ phase: 'ready', data, error: '' }))
       .catch(error => {
         if (error && error.name === 'AbortError') return
         setState({ phase: 'error', data: undefined, error: errorText(error) })
       })
-  }, [page, archived])
+  }, [page])
   React.useEffect(() => {
     const controller = new AbortController()
     load(controller.signal)
@@ -170,21 +169,14 @@ function WorkspacesView({ t, section, onSection }) {
   }, [load])
   const data = state.data
   const workspaces = (data && data.workspaces) || []
-  const ungrouped = (data && data.ungrouped) || { sessions: [], sessionTotal: 0 }
   const totalWorkspaces = Number(data && data.total) || 0
-  const totalSessions = Number(data && data.counts && data.counts.sessions) || 0
-  const filters = [['active', t('filterActive')], ['archived', t('filterArchived')], ['all', t('filterAllSessions')]]
   return h(React.Fragment, null,
     h('div', { className: 'sawb-head' },
       h('h2', { className: 'sawb-title' }, t('workspacesTitle')),
       h('span', { className: 'sawb-meta' }, t('workspacesHint')),
       h('span', { className: 'sawb-spacer' }),
-      h('span', { className: 'sawb-meta' }, `${t('workspaceCount', { n: totalWorkspaces })} · ${t('workspaceSessionCount', { n: totalSessions })}`),
+      h('span', { className: 'sawb-meta' }, t('workspaceCount', { n: totalWorkspaces })),
       h(Tabs, { section, t, onSection }),
-      filters.map(([value, label]) => h('button', {
-        key: value, type: 'button', className: 'sawb-btn', 'aria-pressed': String(archived === value),
-        onClick: () => { setArchived(value); setPage(1) },
-      }, label)),
       h('button', { type: 'button', className: 'sawb-btn', onClick: () => load() }, t('refresh'))),
     h('div', { className: 'sawb-body' },
       state.phase === 'error'
@@ -192,7 +184,6 @@ function WorkspacesView({ t, section, onSection }) {
         : !data
           ? h('div', { className: 'sawb-empty' }, t('loadingData'))
           : h(React.Fragment, null,
-              data.sessionError ? h(Notice, null, data.sessionError) : null,
               h('div', { className: 'sawb-grid' },
                 workspaces.map(workspace => h('article', { key: workspace.id, className: 'sawb-card' },
                   h('h3', null, workspace.title || workspace.id),
@@ -200,21 +191,7 @@ function WorkspacesView({ t, section, onSection }) {
                     h('dt', null, t('workspacePath')), h('dd', { className: 'sawb-mono', title: workspace.path }, workspace.path),
                     h('dt', null, t('workspaceCreated')), h('dd', null, when(workspace.createdAt))),
                   workspace.exists === false ? h(Notice, { tone: 'error' }, t('workspaceMissing')) : null,
-                  h('div', { className: 'sawb-chips' },
-                    h('span', { className: 'sawb-chip' }, t('workspaceSessionCount', { n: workspace.sessionTotal })),
-                    workspace.git ? h('span', { className: 'sawb-chip' }, t('repoGit')) : null),
-                  h(SessionList, {
-                    key: `${workspace.id}:${archived}`, sessions: workspace.sessions, total: workspace.sessionTotal,
-                    workspaceId: workspace.id, archived, t, collapsible: true,
-                  }))),
-                h('article', { key: '__ungrouped', className: 'sawb-card sawb-ungrouped' },
-                  h('h3', null, t('ungroupedTitle')),
-                  h('p', { className: 'sawb-meta' }, t('ungroupedHint')),
-                  h('div', { className: 'sawb-chips' }, h('span', { className: 'sawb-chip' }, t('ungroupedCount', { n: ungrouped.sessionTotal }))),
-                  h(SessionList, {
-                    key: `ungrouped:${archived}`, sessions: ungrouped.sessions, total: ungrouped.sessionTotal,
-                    workspaceId: 'ungrouped', archived, t, collapsible: true,
-                  }))),
+                  workspace.git ? h('div', { className: 'sawb-chips' }, h('span', { className: 'sawb-chip' }, t('repoGit'))) : null))),
               h(Pagination, { page, pageSize: 8, total: totalWorkspaces, t, onChange: setPage }))))
 }
 
