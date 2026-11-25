@@ -5,13 +5,14 @@ status: current
 
 [中文](README.md) | [English](README.en.md)
 
-# DSH Read-only Workbench (dsh-workbench-panel)
+# DSH Read-write Workbench (dsh-workbench-panel)
 
-A read-only DSH Web workbench: one sidebar panel for workspaces and sessions, repository file trees and blobs, and Markdown document indexes, with explicit session archiving.
+A DSH Web workbench that can read and edit: one sidebar panel for workspaces and sessions, repository file trees and blobs, Markdown document indexes, repository-wide search, read-only highlighting and single-file editing, with explicit session archiving.
 
 ## What matters most
 
-- Read-only: never writes user repositories, never runs git write commands, never changes session content; the only write is explicit session archiving.
+- Writes are gated: the Code tab can save a single text file (`writeEnabled`, default `true`; set `false` for read-only). No create/rename/delete, no git commit, no writes outside the repository.
+- No heavyweight IDE: highlighting reuses the shiki build and theme tokens shipped with the DSH frontend; editing is a native `<textarea>` over a read-only highlight layer, with zero new dependencies.
 - Three tabs: Workspaces for paged sessions with unarchived/archived filters, Docs for the Markdown index and content, Code for file trees and blobs.
 - Works without configuration: with `repos` empty, only workspaces and repos auto-detected from `workspaceRegistry` are shown.
 - Unrelated to the npm `dsh-workbench` package (`lee259/dsh-workbench`); this plugin has no SA tickets or control, injects no prompts, listens to no `session/event`, and never renames sessions.
@@ -37,7 +38,7 @@ Uninstall it through the plugin manager; the checkout is kept. For local link in
 2. **Docs**: pick a repo from `docRepos`, then load that repo's Markdown index on demand; folders start collapsed and expand level by level; a document opens as a read-only blob.
 3. **Code**: repos from the plugin's `repos` config plus repos auto-detected from `workspaceRegistry`; the file tree loads level by level and blobs are read-only, in `git` or `worktree` mode.
 4. **Explicit archive**: a two-step confirmation on a session card calls `workspaceRegistry.archiveSession()`; idempotent, and never deletes session logs or directories.
-5. **Read-only API**: `GET /dsh-workbench-panel/api?view=...` exposes `workspaces`, `sessions`, `docRepos`, `docs`, `repos`, `repoSessions`, `tree`, `blob`; lists use `offset`/`limit` (max 50) and return `total`/`hasMore`.
+5. **Read API**: `GET /dsh-workbench-panel/api?view=...` exposes `workspaces`, `sessions`, `docRepos`, `docs`, `repos`, `repoSessions`, `tree`, `blob`; lists use `offset`/`limit` (max 50) and return `total`/`hasMore`.
 6. **Only write**: `POST /dsh-workbench-panel/api/archive` with body `{ "sessionId": "..." }`; authentication and origin checks reuse DSH Connection (401 unauthenticated, 403 untrusted origin).
 7. **Cache**: in-process snapshot cache `cacheSeconds` (default 10 seconds), never persisted; session titles for the current page are hydrated and stored in `<dshHome>/state/workbench/session-titles.json`.
 

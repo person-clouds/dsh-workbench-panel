@@ -24,6 +24,7 @@ function field(type) {
 }
 function string() { return field('string') }
 function number() { return field('number') }
+function boolean() { return field('boolean') }
 function array() { return field('array') }
 function union() { return field('union') }
 function const_() { return field('const') }
@@ -39,7 +40,7 @@ function object(shape) {
   schema.shape = shape
   return schema
 }
-export default { string, number, array, union, const: const_, object }
+export default { string, number, boolean, array, union, const: const_, object }
 `
 
 registerHooks({
@@ -107,6 +108,8 @@ test('插件导出与配置只保留只读工作台需要的字段', () => {
   const config = new Config({})
   assert.equal(typeof config.dshHome, 'string')
   assert.equal(config.cacheSeconds, 10)
+  // 写开关：默认放开，置 false 即回到只读档。
+  assert.equal(config.writeEnabled, true)
   assert.deepEqual(config.repos, [])
   assert.equal(Object.hasOwn(config, 'repoDir'), false)
   assert.equal(Object.hasOwn(config, 'stateDir'), false)
@@ -117,7 +120,7 @@ test('插件导出与配置只保留只读工作台需要的字段', () => {
 test('package.json 声明 dsh.bundle 与公开发布信息', async () => {
   const pack = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'))
   assert.equal(pack.name, 'dsh-workbench-panel')
-  assert.match(pack.version, /^0\.1\.\d+$/)
+  assert.match(pack.version, /^0\.2\.\d+$/)
   assert.equal(pack.dsh.bundle.patch, './cordis.patch.yml')
   assert.equal(pack.dsh.client.platform, 'web')
   assert.equal(pack.publishConfig.access, 'public')
@@ -126,7 +129,7 @@ test('package.json 声明 dsh.bundle 与公开发布信息', async () => {
 })
 
 test('源码与配置不包含 SA、工单、清理、TODO 与 /ok 的实现', async () => {
-  const files = ['index.js', 'client.js', 'lib/repos.js', 'lib/sessions.js', 'lib/workspaces.js', 'lib/list.js', 'lib/markdown.js', 'lib/title-cache.js', 'cordis.patch.yml', 'package.json']
+  const files = ['index.js', 'lib/index.js', 'lib/code.js', 'lib/highlight.js', 'lib/write.js', 'client.js', 'lib/repos.js', 'lib/sessions.js', 'lib/workspaces.js', 'lib/list.js', 'lib/markdown.js', 'lib/title-cache.js', 'cordis.patch.yml', 'package.json']
   const pattern = /superagent|orchestrator|saApiBase|retention|\btickets?\b|\/ok\b|\btodo\b|USER_ACTION_MARKER|systemPrompt/i
   for (const file of files) {
     const text = await readFile(new URL(`../${file}`, import.meta.url), 'utf8')

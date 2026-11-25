@@ -1,8 +1,8 @@
 {
   "name": "dsh-workbench-panel",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "type": "module",
-  "description": "DSH Web 只读工作台：一个侧栏面板查看工作区/会话、仓库文件树与 blob、Markdown 文档索引，并显式归档会话。",
+  "description": "DSH Web 可看可改工作台：一个侧栏面板查看工作区/会话、仓库文件树与 blob、Markdown 文档索引，支持仓库内搜索、只读高亮与受开关约束的单文件编辑，并显式归档会话。",
   "exports": {
     ".": "./index.js",
     "./client": "./client.js"
@@ -10,6 +10,7 @@
   "files": [
     "index.js",
     "client.js",
+    "client",
     "lib",
     "locale",
     "cordis.patch.yml",
@@ -35,7 +36,8 @@
     "node": ">=22.5.0"
   },
   "scripts": {
-    "test": "node --test test/*.test.mjs"
+    "build:client": "node scripts/build-client.mjs",
+    "test": "node scripts/build-client.mjs && node --test test/*.test.mjs"
   },
   "license": "MIT",
   "repository": {
@@ -53,7 +55,9 @@
     "workspace",
     "markdown",
     "session",
-    "read-only"
+    "code-highlight",
+    "editor",
+    "search"
   ],
   "publishConfig": {
     "access": "public"

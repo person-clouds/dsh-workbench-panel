@@ -5,7 +5,7 @@ status: current
 
 # AGENTS.md
 
-> 本仓是独立的 DSH Web 插件仓库「DSH 只读工作台」。跨仓规则仍以 [`/home/zh/www/AGENTS.md`](/home/zh/www/AGENTS.md) 为准；本文件只补充本仓规则。
+> 本仓是独立的 DSH Web 插件仓库「DSH 可看可改工作台」。跨仓规则仍以 [`/home/zh/www/AGENTS.md`](/home/zh/www/AGENTS.md) 为准；本文件只补充本仓规则。
 
 ## 0. 阅读顺序
 
@@ -18,7 +18,9 @@ status: current
 ## 1. 硬约束
 
 - 中文；代码/命令/日志可保留英文。最小变更，只改被要求的内容。
-- **只读优先**：唯一写操作是 `POST /dsh-workbench-panel/api/archive` 的显式会话归档；不写用户仓库文件，不执行 git 写命令，不做批量归档。
+- **写面收窄**：写操作只有三类——显式会话归档（`/api/archive`）、单文件覆盖（`/api/write`）、单文件 git 恢复（`/api/revert`）；后两者受 `writeEnabled` 约束（默认 `true`，`false` 即只读档）。
+- 写实现只能在 `lib/write.js`；**写接口语义**上禁止改名/删除文件、禁止批量写、禁止写仓库外路径、禁止写 `mode=git` 仓库；Host 不执行 `git commit`/`git add`/`git push`（只允许 `git checkout -- <path>` 恢复单文件）。新建仅限「编辑已有文件」与「同目录临时文件 + `rename` 原子替换」，删文件不做。
+- `client.js` 是由 `client/` 各段经 `scripts/build-client.mjs` 拼接生成的单文件，**不直接编辑**；改完必须 `npm run build:client` 并跑 `npm test`（会校验生成物与源码段一致）。
 - 不读写 SA 数据库，不实现 SA 工单/控制/代理，不注入 `systemPrompt`，不监听 `session/event`，不改会话标题；TODO 标题与 `/ok` 不在本包。
 - 不读凭据与 `.env`；浏览代码时屏蔽 `.git`、凭据目录、`*.pem`/`*.key`/`*.sqlite`/`*.db` 等。
 - 所有内容以 React 元素渲染，禁止 `innerHTML`；不新开端口、不启动第二个 DSH Host。
@@ -29,6 +31,7 @@ status: current
 
 ```bash
 cd /home/zh/www/dsh-workbench-panel
+npm run build:client          # 从 client/ 各段生成仓根 client.js
 node --check index.js
 node --check client.js
 node -e "new (require('vm').Script)(require('fs').readFileSync('client.js','utf8'))"
