@@ -84,8 +84,10 @@ const SAWB_CSS = `
 .sawb-body > .sawb-file-head,
 .sawb-body > .sawb-crumbs,
 .sawb-body > .sawb-tree,
-.sawb-body > .sawb-code-wrap,
 .sawb-body > .sawb-panel { width: 100%; max-width: 1120px; box-sizing: border-box; margin-left: auto; margin-right: auto; }
+/* 代码与编辑容器不参与 1120px 居中限宽：代码行不换行，限宽即意味着横向滚动。
+   该规则必须放在上面的分组之后——同 specificity 下后者胜，且已从分组中删除 .sawb-code-wrap。 */
+.sawb-body > .sawb-code-wrap { width: 100%; max-width: none; box-sizing: border-box; margin-left: 0; margin-right: 0; }
 .sawb-body > .sawb-section { width: 100%; max-width: 1080px; margin-left: auto; margin-right: auto; }
 @media (max-width: 900px) {
   .sawb-head { padding-left: 14px; padding-right: 14px; }
@@ -128,8 +130,9 @@ const SAWB_CSS = `
 .sawb-switcher { position: relative; }
 .sawb-float { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; width: min(420px, 70vw); max-height: 60vh; display: flex; flex-direction: column; background: var(--dsw-alias-bg-base); border: 1px solid var(--dsw-alias-border-l2); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.18); overflow: hidden; }
 .sawb-float-body { overflow: auto; padding: 4px 0 8px; }
-.sawb-editor { display: flex; max-height: calc(100vh - 300px); overflow: auto; font-family: var(--dsw-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: 12px; line-height: 1.55; tab-size: 2; }
-.sawb-edit-area { flex: 1 1 auto; box-sizing: border-box; border: 1px solid var(--dsw-alias-border-l2); background: var(--dsw-alias-bg-base); color: var(--dsw-alias-label-primary); font: inherit; padding: 10px 12px; resize: none; white-space: pre; overflow: auto; min-height: calc(100vh - 340px); tab-size: 2; }
+/* 编辑容器：横竖双向滚动（横向交给 textarea 自身，纵向由列 flex 撑满），不再限制父级宽高。 */
+.sawb-editor-stack { display: flex; flex-direction: column; width: 100%; box-sizing: border-box; font-family: var(--dsw-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: 12px; line-height: 1.55; tab-size: 2; }
+.sawb-edit-area { flex: 1 1 auto; width: 100%; box-sizing: border-box; border: 1px solid var(--dsw-alias-border-l2); background: var(--dsw-alias-bg-base); color: var(--dsw-alias-label-primary); font: inherit; font-size: 13px; line-height: 1.6; padding: 10px 12px; resize: vertical; white-space: pre; overflow: auto; min-height: max(320px, calc(100vh - 320px)); max-height: none; tab-size: 2; }
 .sawb-edit-area:focus-visible { outline: 2px solid var(--dsw-alias-brand-primary); outline-offset: 0; }
 .sawb-banner { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 10px; padding: 6px 10px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 8px; background: var(--dsw-alias-bg-layer-2); font-size: 12px; }
 `

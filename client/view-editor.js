@@ -473,27 +473,28 @@ function FileBody({ draft, t, focusLine, onChange }) {
   }
 
   return h('div', { className: 'sawb-code-wrap' },
-    h('textarea', {
-      ref: areaRef,
-      className: 'sawb-edit-area',
-      spellCheck: false,
-      wrap: 'off',
-      value: draft.text,
-      'aria-label': draft.path,
-      onChange: event => onChange(event.target.value, { start: event.target.selectionStart, end: event.target.selectionEnd }),
-      onKeyDown: event => {
-        // Tab 插两个空格；不拦截其他键，保留浏览器原生撤销栈。
-        if (event.key !== 'Tab' || event.shiftKey || event.altKey) return
-        event.preventDefault()
-        const area = event.currentTarget
-        const start = area.selectionStart
-        const end = area.selectionEnd
-        const text = `${draft.text.slice(0, start)}  ${draft.text.slice(end)}`
-        onChange(text, { start: start + 2, end: start + 2 })
-        Promise.resolve().then(() => {
-          if (areaRef.current) areaRef.current.setSelectionRange(start + 2, start + 2)
-        })
-      },
-      onSelect: event => onChange(draft.text, { start: event.target.selectionStart, end: event.target.selectionEnd }),
-    }))
+    h('div', { className: 'sawb-editor-stack' },
+      h('textarea', {
+        ref: areaRef,
+        className: 'sawb-edit-area',
+        spellCheck: false,
+        wrap: 'off',
+        value: draft.text,
+        'aria-label': draft.path,
+        onChange: event => onChange(event.target.value, { start: event.target.selectionStart, end: event.target.selectionEnd }),
+        onKeyDown: event => {
+          // Tab 插两个空格；不拦截其他键，保留浏览器原生撤销栈。
+          if (event.key !== 'Tab' || event.shiftKey || event.altKey) return
+          event.preventDefault()
+          const area = event.currentTarget
+          const start = area.selectionStart
+          const end = area.selectionEnd
+          const text = `${draft.text.slice(0, start)}  ${draft.text.slice(end)}`
+          onChange(text, { start: start + 2, end: start + 2 })
+          Promise.resolve().then(() => {
+            if (areaRef.current) areaRef.current.setSelectionRange(start + 2, start + 2)
+          })
+        },
+        onSelect: event => onChange(draft.text, { start: event.target.selectionStart, end: event.target.selectionEnd }),
+      })))
 }
