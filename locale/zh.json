@@ -80,5 +80,11 @@
   "workspaceMissing": "目录不存在",
   "workspacePath": "路径",
   "workspacesHint": "这些记录来自当前 DSH Host 的 workspaceRegistry，是唯一写者。",
-  "workspacesTitle": "工作区"
+  "workspacesTitle": "工作区",
+  "editMarkdown": "编辑源文",
+  "editingMode": "编辑中",
+  "editHint": "Tab 插入两个空格；Ctrl/Cmd+Z 为浏览器原生撤销。",
+  "previewMode": "预览",
+  "docsReadOnlyHint": "当前为渲染预览，点「编辑源文」可改 Markdown 正文。",
+  "saving": "保存中…"
 }

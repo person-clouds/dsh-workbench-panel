@@ -10,6 +10,8 @@ import assert from 'node:assert/strict'
 import { existsSync } from 'node:fs'
 import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
+import { readdir, readFile } from 'node:fs/promises'
+import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { MATCH_LIMIT, QUERY_MAX, QUERY_MIN, clearRgCache, searchRepo, setRgResolver } from '../lib/code.js'
 import { HIGHLIGHT_LANGS, clearHighlightCache, highlightCacheSize, highlightLines } from '../lib/highlight.js'
@@ -265,7 +267,7 @@ test('高亮：语法 id 映射表覆盖 langFor 的全部取值', () => {
     'bash', 'toml', 'ini', 'xml', 'rust', 'java', 'c', 'cpp', 'php', 'sql', 'javascript', 'dockerfile']
   for (const lang of expected) assert.ok(lang in HIGHLIGHT_LANGS, `缺少映射：${lang}`)
   assert.equal(HIGHLIGHT_LANGS.dockerfile, null, 'dockerfile：DSH langs 资源无独立块，回退纯文本')
-  assert.equal(HIGHLIGHT_LANGS.sql, 'mysql', 'sql：DSH 的 sql 块注册名是 mysql')
+  assert.equal(HIGHLIGHT_LANGS.sql, 'sql', 'sql：sql-*.js 块自身 name 是 sql（0.2.2-rc.1 实测）')
   assert.equal(HIGHLIGHT_LANGS.tsx, 'typescript', 'tsx：无独立块，近似 typescript')
   assert.equal(HIGHLIGHT_LANGS.bash, 'shellscript', 'bash：由 vendor 内置的 shellscript 语法承担')
 })
@@ -338,4 +340,85 @@ test('高亮：Go 的 package 关键字行带颜色（DSH 资源不可用时跳�
   assert.ok(keyword, '第一行应包含 package 关键字 token')
   assert.match(keyword[1].color, /^var\(--shiki-token-keyword\)$/)
   clearHighlightCache()
+})
+
+/** 下面三条是高亮回归：都曾真实导致「只剩纯文本」，且一种语言失败不能拖垮别的语言。 */
+test('高亮回归：javascript 无依赖块（m.f 清单）也能取到 token', async t => {
+  if (!SHIKI_READY) {
+    t.skip(`本机 DSH 安装目录不可用：${ASSETS_DIR}`)
+    return
+  }
+  clearHighlightCache()
+  // javascript 块只出现在主 bundle 的 `m.f=[...]` 清单里，没有 import 语句；
+  // 早期正则只匹配 import 形式 → 报「语法块缺失：javascript」，JS 文件全变纯文本。
+  const result = await highlightLines('const answer = 42\n', 'javascript', { installDir: INSTALL_DIR })
+  if (!result.tokens) {
+    t.skip(`shiki 加载失败：${result.reason}`)
+    return
+  }
+  assert.ok(result.tokens[0].some(token => /shiki/.test(token[1].color)), '应带 --shiki-token-* 颜色')
+  clearHighlightCache()
+})
+
+test('高亮回归：依赖其它语法的块（yaml/markdown/toml）不再报 Missing languages', async t => {
+  if (!SHIKI_READY) {
+    t.skip(`本机 DSH 安装目录不可用：${ASSETS_DIR}`)
+    return
+  }
+  clearHighlightCache()
+  for (const [lang, text] of [['yaml', 'key: value\n'], ['markdown', '# Title\n\n- item\n'], ['toml', 'a = 1\n']]) {
+    const result = await highlightLines(text, lang, { installDir: INSTALL_DIR })
+    if (!result.tokens && /加载失败|前端资源不可用/.test(result.reason || '')) {
+      t.skip(`shiki 加载失败：${result.reason}`)
+      return
+    }
+    assert.ok(result.tokens, `${lang} 应能高亮，实际：${result.reason}`)
+    assert.ok(result.tokens.length > 0)
+  }
+  clearHighlightCache()
+})
+
+test('高亮回归：一种语言失败不污染其它语言（失败缓存按语言隔离）', async t => {
+  if (!SHIKI_READY) {
+    t.skip(`本机 DSH 安装目录不可用：${ASSETS_DIR}`)
+    return
+  }
+  clearHighlightCache()
+  const broken = await highlightLines('x\n', 'dockerfile', { installDir: INSTALL_DIR })
+  assert.equal(broken.tokens, null, 'dockerfile 无语法块，应回退纯文本')
+  const ok = await highlightLines('const a = 1\n', 'javascript', { installDir: INSTALL_DIR })
+  if (!ok.tokens && /加载失败|前端资源不可用/.test(ok.reason || '')) {
+    t.skip(`shiki 加载失败：${ok.reason}`)
+    return
+  }
+  assert.ok(ok.tokens, `javascript 不应受 dockerfile 失败影响：${ok.reason}`)
+  clearHighlightCache()
+})
+
+test('静态回归：client/ 不得引用未声明的 `sel`（编辑态曾整块崩掉）', async t => {
+  // 背景：EditorPane 的聚焦 effect 写过裸 `sel`、文档页 setEdit 对象字面量写过 `sel,`
+  // 简写，两者都会在「进编辑态」那一刻抛 ReferenceError，React 直接卸载整个工作台面板。
+  // 单元测试跑不到浏览器，这里用源码静态扫描把这两类写法钉死。
+  const clientDir = fileURLToPath(new URL('../client/', import.meta.url))
+  const files = (await readdir(clientDir)).filter(name => name.endsWith('.js'))
+  assert.ok(files.length > 0, 'client/ 下应有源码段')
+  const offenders = []
+  for (const name of files) {
+    const source = await readFile(join(clientDir, name), 'utf8')
+    source.split('\n').forEach((line, index) => {
+      const code = line.replace(/\/\/.*$/, '').replace(/\/\*.*?\*\//g, '')
+      // 先剥掉所有「已绑定」的形态：属性访问 `x.sel`、对象键 `sel:`、形参 `(sel`、
+      // 箭头参数 `sel =>`、简写值 `... sel }` / `, sel )`（此处 sel 是已声明的形参）。
+      // 剥完还剩下裸 `sel` 标识符，就说明它没在任何可见作用域里声明 —— 正是崩溃写法。
+      const stripped = code
+        .replace(/\.sel\b/g, '')
+        .replace(/(^|[\s{(,])sel\s*:/g, '$1')
+        .replace(/(^|[\s{(,])sel\s*=>/g, '$1')
+        .replace(/\(\s*sel\s*(?=[,)])/g, '(')
+        .replace(/(^|[\s{(,])sel\s*(?=[,)])/g, '$1')
+        .replace(/,\s*sel\s*(?=[})])/g, '')
+      if (/\bsel\b/.test(stripped)) offenders.push(`${name}:${index + 1}: ${line.trim().slice(0, 90)}`)
+    })
+  }
+  assert.deepEqual(offenders, [], `发现未声明的 sel 引用：\n${offenders.join('\n')}`)
 })

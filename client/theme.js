@@ -131,8 +131,22 @@ const SAWB_CSS = `
 .sawb-float { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; width: min(420px, 70vw); max-height: 60vh; display: flex; flex-direction: column; background: var(--dsw-alias-bg-base); border: 1px solid var(--dsw-alias-border-l2); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.18); overflow: hidden; }
 .sawb-float-body { overflow: auto; padding: 4px 0 8px; }
 /* 编辑容器：横竖双向滚动（横向交给 textarea 自身，纵向由列 flex 撑满），不再限制父级宽高。 */
-.sawb-editor-stack { display: flex; flex-direction: column; width: 100%; box-sizing: border-box; font-family: var(--dsw-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: 12px; line-height: 1.55; tab-size: 2; }
-.sawb-edit-area { flex: 1 1 auto; width: 100%; box-sizing: border-box; border: 1px solid var(--dsw-alias-border-l2); background: var(--dsw-alias-bg-base); color: var(--dsw-alias-label-primary); font: inherit; font-size: 13px; line-height: 1.6; padding: 10px 12px; resize: vertical; white-space: pre; overflow: auto; min-height: max(320px, calc(100vh - 320px)); max-height: none; tab-size: 2; }
-.sawb-edit-area:focus-visible { outline: 2px solid var(--dsw-alias-brand-primary); outline-offset: 0; }
+/* 编辑器叠层：行号槽与高亮层共用一组度量，透明 textarea 浮在 token 之上。
+   三者 font/padding/line-height/tab-size 必须一致，否则光标与下方字符错位；
+   边框只画在外层 .sawb-ov，textarea 自身无边框无背景。 */
+.sawb-editor-stack { display: flex; flex-direction: column; width: 100%; box-sizing: border-box; background: var(--dsw-alias-bg-base); }
+.sawb-ov { display: grid; grid-template-columns: 54px 1fr; min-height: max(360px, calc(100vh - 340px)); border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; background: var(--dsw-alias-bg-base); overflow: hidden; }
+.sawb-ov-gutter { overflow: hidden; background: var(--dsw-alias-bg-layer-1); border-right: 1px solid var(--dsw-alias-border-l1); user-select: none; }
+.sawb-ov-gutter-inner { padding: 10px 0; }
+.sawb-ov-line-no, .sawb-ov-pre, .sawb-ov-area { font-family: var(--dsw-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: 12px; line-height: 1.55; tab-size: 2; }
+.sawb-ov-line-no { text-align: right; padding: 0 10px 0 4px; color: var(--dsw-alias-state-idle-primary); }
+.sawb-ov-main { position: relative; min-width: 0; overflow: hidden; }
+.sawb-ov-pre, .sawb-ov-area { position: absolute; inset: 0; margin: 0; border: 0; padding: 10px 12px; box-sizing: border-box; white-space: pre; overflow: auto; }
+.sawb-ov-pre { pointer-events: none; color: var(--dsw-alias-label-primary); }
+.sawb-ov-line { display: block; min-width: max-content; }
+.sawb-ov-area { width: 100%; height: 100%; resize: none; background: transparent; color: transparent; caret-color: var(--dsw-alias-label-primary); outline: none; }
+.sawb-ov-area::selection { background: var(--dsw-alias-brand-primary); }
+.sawb-ov-status { display: flex; gap: 12px; align-items: center; padding: 4px 10px; border: 1px solid var(--dsw-alias-border-l1); border-top: 0; border-radius: 0 0 8px 8px; background: var(--dsw-alias-bg-layer-1); color: var(--dsw-alias-label-secondary); font-size: 11px; }
+.sawb-ov-lang { margin-left: auto; }
 .sawb-banner { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 10px; padding: 6px 10px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 8px; background: var(--dsw-alias-bg-layer-2); font-size: 12px; }
 `

@@ -13,7 +13,7 @@ A DSH Web workbench that can read and edit: one sidebar panel for workspaces, re
 
 - Writes are gated: the Code tab can save a single text file (`writeEnabled`, default `true`; set `false` for read-only). No create/rename/delete, no git commit, no writes outside the repository.
 - No heavyweight IDE: highlighting reuses the shiki build and theme tokens shipped with the DSH frontend; editing is a native `<textarea>` over a read-only highlight layer, with zero new dependencies.
-- Three tabs: Workspaces for workspace cards, Docs for the Markdown index and content, Code for file trees (every level fully listed) and blobs.
+- Three tabs: Workspaces for workspace cards, Docs for the Markdown index and editable content, Code for file trees (every level fully listed) and blobs.
 - Works without configuration: with `repos` empty, only workspaces and repos auto-detected from `workspaceRegistry` are shown.
 - Unrelated to the npm `dsh-workbench` package (`lee259/dsh-workbench`); this plugin has no SA tickets or control, injects no prompts, listens to no `session/event`, and never renames sessions.
 - Requirements: DSH Web, Node ≥22.5 (`engines`).
@@ -35,7 +35,7 @@ Uninstall it through the plugin manager; the checkout is kept. For local link in
 ## Features
 
 1. **Workspaces**: reads only workspaces from `ctx.workspaceRegistry` (title, path, creation time, git marker); no session lists, no unarchived/archived filters and no ungrouped bucket.
-2. **Docs**: pick a repo from `docRepos`, then load that repo's Markdown index on demand; folders start collapsed and expand level by level; a document opens as a read-only blob.
+2. **Docs**: pick a repo from `docRepos`, then load that repo's Markdown index on demand; folders start collapsed and expand level by level; a document opens as a blob. The `编辑源文` button switches to the overlay editor for the Markdown source (save is two-step confirmed and uses an `mtimeMs` optimistic lock); `预览` goes back to the rendered view.
 3. **Code**: repos from the plugin's `repos` config plus repos auto-detected from `workspaceRegistry`; the file tree loads level by level with **every entry shown (no pagination)** and blobs are read-only, in `git` or `worktree` mode.
 4. **Explicit archive**: `POST /api/archive` calls `workspaceRegistry.archiveSession()`; idempotent, and never deletes session logs or directories (the panel no longer renders session cards, so this is for scripts and external callers).
 5. **Read API**: `GET /dsh-workbench-panel/api?view=...` exposes `workspaces`, `docRepos`, `docs`, `repos`, `tree`, `blob` (`sessions`/`repoSessions` are gone); workspace and repo lists use `offset`/`limit` (max 50) and return `total`/`hasMore`, while `tree` returns every entry of that level without pagination.

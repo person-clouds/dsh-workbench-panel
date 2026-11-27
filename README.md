@@ -12,7 +12,7 @@ DSH Web 可看可改工作台：一个侧栏面板查看工作区、仓库文件
 ## 先说最要紧的
 
 - 写受开关约束：代码页可保存单个文本文件（`writeEnabled` 默认 `true`，置 `false` 即回到只读档）；不新建/改名/删除文件、不做 git 提交、不写仓库外路径。
-- 高亮不加重型 IDE：复用 DSH 前端自带的 shiki 与主题令牌，编辑用原生 `<textarea>` 叠只读高亮层，零新依赖。
+- 高亮不加重型 IDE：复用 DSH 前端自带的 shiki 与主题令牌（启动预载全部 59 个语法块，约 2 秒 / 280KB，覆盖 21 种语言），编辑用原生 `<textarea>` 叠只读高亮层，零新依赖；某语法块加载失败只让该语言回退纯文本。
 - 三页签：工作区看工作区卡片，文档看 Markdown 索引与正文，代码看文件树（每层全部展开）与 blob。
 - 不配置也能用：`repos` 留空时只展示 `workspaceRegistry` 自动识别的工作区与仓库。
 - 与 npm 上的 `dsh-workbench`（`lee259/dsh-workbench`）是两个项目；本包不做 SA 工单/控制、不注入提示词、不监听 `session/event`、不改会话标题。
@@ -35,7 +35,7 @@ dsh plugin --profile web add dsh-workbench-panel
 ## 功能
 
 1. **工作区页**：只读取 `ctx.workspaceRegistry` 的工作区（标题、路径、创建时间、git 标记）；不展示会话、不提供未归档/已归档过滤与未分组桶。
-2. **文档页**：先从 `docRepos` 选仓库，再按需加载该仓 Markdown 索引；目录默认收起、逐层展开，点文档用 blob 视图读正文。
+2. **文档页**：先从 `docRepos` 选仓库，再按需加载该仓 Markdown 索引；目录默认收起、逐层展开，点文档用 blob 视图读正文；顶部 `编辑源文` 切到叠层编辑器改 Markdown 正文（`保存` 走两步确认 + `mtimeMs` 乐观锁），`预览` 切回渲染。
 3. **代码页**：插件 `repos` 配置 + `workspaceRegistry` 自动识别的仓库；文件树逐层加载且**每层全部展示（不分页）**、blob 只读查看，支持 `git` 与 `worktree` 两种模式。
 4. **显式归档**：`POST /api/archive` 调用 `workspaceRegistry.archiveSession()`，幂等；不删除会话日志或目录（面板不再有会话卡片，归档接口保留给脚本与外部调用）。
 5. **只读接口**：`GET /dsh-workbench-panel/api?view=...` 提供 `workspaces`、`docRepos`、`docs`、`repos`、`tree`、`blob`（`sessions`/`repoSessions` 已下线）；工作区与仓库列表用 `offset`/`limit`（上限 50）并返回 `total`/`hasMore`，`tree` 不分页、一次返回该层全部子项。

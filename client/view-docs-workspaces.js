@@ -1,8 +1,9 @@
 /**
  * 工作区页与文档页（自 A 段原样迁移，接口行为未变）。
  *
- * 这两页不涉及写能力：工作区页只读 workspaceRegistry，文档页只读 Markdown
- * 索引与 blob。迁移时只调整了函数顺序，渲染逻辑逐行保持不变。
+ * 工作区页只读 workspaceRegistry。文档页读取 Markdown 索引与 blob；
+ * blob 带 `editable` 时文档页可按「编辑源文」直接改 Markdown（写路径复用
+ * `POST /api/write`、`expectMtimeMs` 乐观锁，编辑器复用 `EditorPane` 高亮叠层）。
  */
 
 /** 把 flat docs 构造成目录树；只在前端派生，不改变 Host 返回结构。 */
@@ -49,6 +50,7 @@ function DocsView({ t, section, onSection }) {
   const [route, setRoute] = React.useState({ kind: 'repos', repo: undefined })
   const [state, setState] = React.useState({ phase: 'loading', repos: [], groups: [], error: '' })
   const [doc, setDoc] = React.useState({ phase: 'idle', repo: undefined, data: undefined, error: '' })
+  const [edit, setEdit] = React.useState({ on: false, text: '', baseText: '', sel: null, mtimeMs: 0, notice: '', error: false, saving: false })
   const [repoPage, setRepoPage] = React.useState(1)
   const [repoTotal, setRepoTotal] = React.useState(0)
 
@@ -72,10 +74,40 @@ function DocsView({ t, section, onSection }) {
 
   const openDoc = (repo, path) => {
     setDoc({ phase: 'loading', repo, data: undefined, error: '' })
+    setEdit({ on: false, text: '', baseText: '', sel: null, mtimeMs: 0, notice: '', error: false, saving: false })
     const controller = new AbortController()
     loadApi({ view: 'blob', repo: repo.id, path }, controller.signal)
       .then(data => setDoc({ phase: 'ready', repo, data, error: '' }))
       .catch(error => setDoc({ phase: 'error', repo, data: undefined, error: errorText(error) }))
+  }
+
+  /** 重新取一次 blob：保存后用磁盘内容刷新预览块与高亮 token。 */
+  const refreshDoc = () => loadApi({ view: 'blob', repo: doc.repo.id, path: doc.data.path })
+    .then(data => setDoc(previous => ({ ...previous, data })))
+    .catch(error => setEdit(previous => ({ ...previous, notice: t('readFailed', { message: errorText(error) }), error: true })))
+
+  /** 保存 Markdown：两步确认 → `POST /api/write`（`expectMtimeMs` 乐观锁）→ 刷新预览块。 */
+  const saveDoc = () => {
+    if (!doc.data || !edit.on) return
+    if (!window.confirm(t('confirmSave'))) return
+    setEdit(previous => ({ ...previous, saving: true }))
+    postApi('/write', {
+      repo: doc.repo.id, path: doc.data.path, text: edit.text, expectMtimeMs: edit.mtimeMs,
+    })
+      .then(data => {
+        setEdit(previous => ({
+          ...previous, saving: false, mtimeMs: data.mtimeMs, baseText: previous.text,
+          notice: t('saveDone'), error: false,
+        }))
+        return refreshDoc()
+      })
+      .catch(failure => {
+        const conflict = Number(failure && failure.status) === 409
+        setEdit(previous => ({
+          ...previous, saving: false, error: true,
+          notice: conflict ? t('editConflict', { message: errorText(failure) }) : t('saveFailed', { message: errorText(failure) }),
+        }))
+      })
   }
 
   if (doc.phase !== 'idle') {
@@ -92,10 +124,49 @@ function DocsView({ t, section, onSection }) {
             : h(React.Fragment, null,
                 h('div', { className: 'sawb-file-head' },
                   h('h2', { className: 'sawb-detail-title' }, doc.data.path.split('/').pop()),
-                  badge(doc.data.path, 'muted')),
+                  badge(doc.data.path, 'muted'),
+                  h('span', { className: 'sawb-spacer' }),
+                  doc.data.editable && !doc.data.tooLarge
+                    ? (edit.on
+                        ? h(React.Fragment, null,
+                            edit.notice ? h(Notice, { tone: edit.error ? 'error' : undefined }, edit.notice) : null,
+                            h('button', { type: 'button', className: 'sawb-btn', onClick: () => setEdit(previous => ({
+                              ...previous, on: false,
+                              // 退出编辑保留草稿：再次点「编辑源文」可继续改
+                            })) }, t('previewMode')),
+                            h('button', {
+                              type: 'button', className: 'sawb-btn', disabled: edit.saving || edit.text === edit.baseText,
+                              onClick: () => saveDoc(),
+                            }, edit.saving ? t('saving') : t('save')))
+                        : h('button', {
+                            type: 'button', className: 'sawb-btn',
+                            // 注意：这里是对象字面量，不能写 `sel: null` 之外的简写；
+                            // 早期误写成 `sel`（省略键名）导致运行期 ReferenceError: sel is not defined，
+                            // 点「编辑源文」直接崩掉整个面板（slot entry crashed）。
+                            onClick: () => setEdit({
+                              on: true, text: doc.data.text || '', baseText: doc.data.text || '',
+                              sel: null, mtimeMs: doc.data.mtimeMs || 0, notice: '', error: false, saving: false,
+                            }),
+                          }, t('editMarkdown')))
+                    : null,
+                  doc.data.editable ? null : badge(t('notEditable'), 'muted')),
                 doc.data.tooLarge
                   ? h(Notice, null, t('fileTooLarge'))
-                  : h('div', { className: 'sawb-panel' }, h(Markdown, { blocks: doc.data.blocks })))))
+                  : edit.on
+                    ? h('div', { className: 'sawb-code-wrap' },
+                        h(EditorPane, {
+                          // tokens/lang 必须来自 blob（Host 侧 shiki 结果）：早期写死
+                          // `tokens: null, lang: ''`，文档编辑态只有纯白字、无任何着色。
+                          t, value: edit.text, tokens: doc.data.tokens, lang: doc.data.lang, scrollKey: doc.data.path,
+                          selection: edit.sel,
+                          onText: (text, sel) => setEdit(previous => ({ ...previous, text, sel })),
+                          onSel: sel => setEdit(previous => ({ ...previous, sel })),
+                        }))
+                    : h(React.Fragment, null,
+                        h('div', { className: 'sawb-banner' },
+                          badge(t('previewMode'), 'muted'),
+                          h('span', { className: 'sawb-meta' }, t('docsReadOnlyHint'))),
+                        h('div', { className: 'sawb-panel' }, h(Markdown, { blocks: doc.data.blocks }))))))
   }
 
   if (route.kind === 'repos') {

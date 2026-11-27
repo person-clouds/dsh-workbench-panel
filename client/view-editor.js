@@ -5,13 +5,127 @@
  * - `FileSwitcher`：文件页左上「☰ 文件」按钮 + 浮动面板（悬停 200ms 浮出、移出 150ms 收起，
  *   点击即钉住；面板内 `Alt+1` 可收起且不抢 DSH 全局快捷键）；
  * - `EditorTabs`：打开标签条，同仓库最多 `EDITOR_MAX_TABS` 个，切走时保留草稿与光标；
- * - `EditorShell` / `FileBody`：只读与编辑两态。编辑是原生 `<textarea>`（Tab 插两空格），
- *   保存走 `POST /api/write`（`expectMtimeMs` 乐观锁），撤销走 `POST /api/revert`。
+ * - `EditorShell` / `FileBody`：只读与编辑两态。编辑走 `MarkdownEditor` / `CodeEditor`
+ *   （原生 `<textarea>` + 只读高亮叠层，Tab 插两空格），保存走 `POST /api/write`
+ *   （`expectMtimeMs` 乐观锁），撤销走 `POST /api/revert`。
  *
  * 状态全部在 `EditorShell`：切仓库即清空标签与草稿（有未保存先确认），不做跨仓库多开。
+ * 编辑器本体（`EditorPane` 及叠层、行号）放在本段，供代码页与文档页共用。
  */
 
 const EDITOR_MAX_TABS = 8
+
+/**
+ * 编辑器共用外壳：行号槽 + 叠层（底层只读高亮 `<pre>`、上层透明 `<textarea>`）。
+ *
+ * 两层字体、字号、行高、padding、tab-size 必须完全一致（样式在 `client/theme.js`
+ * `.sawb-ov-pre` / `.sawb-ov-area` 共用一组声明），否则光标与字符会错位。
+ * 高亮 token 缺失（Host 取不到 shiki）时底层只渲染纯文本，编辑仍可用，等同一层。
+ */
+function EditorPane({ t, value, tokens, lang, scrollKey, selection, onText, onSel }) {
+  const scrollRef = React.useRef(null)
+  const gutterRef = React.useRef(null)
+  const preRef = React.useRef(null)
+  const areaRef = React.useRef(null)
+  const [count, setCount] = React.useState(0)
+  const [caret, setCaret] = React.useState({ line: 1 })
+  const [, forceRepaint] = React.useState(0)
+
+  const text = String(value == null ? '' : value)
+  React.useEffect(() => { setCount(text.length) }, [text])
+
+  // 进入编辑态（含切标签）时聚焦并把光标还原到草稿记下的位置；`caret` 不能进依赖，
+  // 否则每次按键移动光标都会抢焦点、重置输入法组合。
+  // `selection` 必须显式取 props：早期写成裸 `sel`（未声明变量），进编辑态即
+  // `ReferenceError: sel is not defined`，整个面板被 React 卸载。
+  React.useEffect(() => {
+    const area = areaRef.current
+    if (!area) return
+    area.focus()
+    if (!selection) return
+    try { area.setSelectionRange(selection.start, selection.end) } catch { /* 选区越界忽略 */ }
+  }, [scrollKey])
+
+  /** 叠层同步：把 textarea 的滚动同时给高亮层与行号槽；宽度变化时重算行号。 */
+  const sync = () => {
+    const area = areaRef.current
+    if (!area) return
+    if (preRef.current) {
+      preRef.current.scrollTop = area.scrollTop
+      preRef.current.scrollLeft = area.scrollLeft
+    }
+    if (gutterRef.current) gutterRef.current.scrollTop = area.scrollTop
+    const line = area.value.slice(0, area.selectionStart).split('\n').length
+    setCaret(previous => (previous.line === line ? previous : { line }))
+  }
+  React.useEffect(() => {
+    sync()
+    if (!scrollRef.current || typeof ResizeObserver !== 'function') return undefined
+    const observer = new ResizeObserver(() => forceRepaint(at => at + 1))
+    observer.observe(scrollRef.current)
+    return () => observer.disconnect()
+  }, [scrollKey])
+
+  // 行号槽按当前行数生成（与只读视图同样的 1..n 序列）。
+  const lines = text.split('\n').length
+  const numbers = []
+  for (let index = 1; index <= lines; index += 1) numbers.push(index)
+
+  const remember = event => {
+    onSel({ start: event.target.selectionStart, end: event.target.selectionEnd })
+  }
+
+  return h('div', { className: 'sawb-editor-stack', ref: scrollRef },
+    h('div', { className: 'sawb-ov' },
+      h('div', { className: 'sawb-ov-gutter' },
+        h('div', { className: 'sawb-ov-gutter-inner', ref: gutterRef },
+          numbers.map(number => h('div', { key: number, className: 'sawb-ov-line-no' }, String(number))))),
+      h('div', { className: 'sawb-ov-main' },
+        h('pre', { className: 'sawb-ov-pre', ref: preRef, 'aria-hidden': true },
+          Array.isArray(tokens) && tokens.length
+            ? tokens.map((line, index) => h('span', { key: index, className: 'sawb-ov-line' },
+                (line && line.length ? line : [['', '']]).map((token, at) =>
+                  h('span', { key: at, style: tokenColor(token[1]) }, token[0] || ' '))))
+            : text.split('\n').map((line, index) => h('span', { key: index, className: 'sawb-ov-line' }, line || ' '))),
+        h('textarea', {
+          ref: areaRef,
+          className: 'sawb-ov-area',
+          spellCheck: false,
+          wrap: 'off',
+          value: text,
+          'aria-label': lang || t('edit'),
+          onChange: event => onText(event.target.value, { start: event.target.selectionStart, end: event.target.selectionEnd }),
+          onScroll: sync,
+          onSelect: event => { remember(event); sync() },
+          onClick: sync,
+          onKeyUp: sync,
+          onKeyDown: event => {
+            // Tab 插两个空格；不拦截其他键，保留浏览器原生撤销栈。
+            if (event.key !== 'Tab' || event.shiftKey || event.altKey) return
+            event.preventDefault()
+            const area = event.currentTarget
+            const start = area.selectionStart
+            const end = area.selectionEnd
+            onText(`${text.slice(0, start)}  ${text.slice(end)}`, { start: start + 2, end: start + 2 })
+            Promise.resolve().then(() => {
+              if (areaRef.current) {
+                areaRef.current.setSelectionRange(start + 2, start + 2)
+                sync()
+              }
+            })
+          },
+        }))),
+    h('div', { className: 'sawb-ov-status' },
+      h('span', null, `${count} 字符 · ${lines} 行 · 第 ${caret.line} 行`),
+      lang ? h('span', { className: 'sawb-ov-lang' }, lang) : null))
+}
+
+
+/** 代码文件编辑：高亮叠层 + 行号；`tokens` 为 Host 下发的 shiki token。 */
+function CodeEditor({ t, draft, onText, onSel, scrollKey }) {
+  return h('div', { className: 'sawb-code-wrap' },
+    h(EditorPane, { t, value: draft.text, tokens: draft.tokens, lang: draft.lang, scrollKey, selection: draft.sel, onText, onSel }))
+}
 
 function parentPath(path) {
   const text = String(path || '')
@@ -420,6 +534,7 @@ function EditorShell({ t, section, onSection }) {
         h('span', { className: 'sawb-spacer' }),
         draft && draft.canEdit
           ? h(React.Fragment, null,
+              draft.dirty ? badge(t('editing'), 'live') : null,
               h('button', { type: 'button', className: 'sawb-btn', disabled: !draft.dirty, onClick: reload }, t('reload')),
               h('button', { type: 'button', className: 'sawb-btn', onClick: revert }, t('revert')),
               h('button', { type: 'button', className: 'sawb-btn sawb-btn-primary', disabled: !draft.dirty, onClick: save }, t('save')))
@@ -435,28 +550,34 @@ function EditorShell({ t, section, onSection }) {
       loading && !draft
         ? h('div', { className: 'sawb-empty' }, t('loadingData'))
         : draft
-          ? h(FileBody, { key: draft.path, draft, t, focusLine, onChange: (text, sel) => patchDraft({ text, sel, dirty: text !== draft.baseText }) })
+          ? h(FileBody, { key: draft.path, draft, t, focusLine, scrollKey: draft.path,
+              onChange: (text, sel) => patchDraft({ text, sel, dirty: text !== draft.baseText }) })
           : null))
 }
 
 /**
- * 文件正文：超大/二进制给提示；可编辑文件给「编辑」按钮切到 textarea。
- * 编辑态只显示 textarea：保证原生输入法、撤销栈与性能；退出编辑（保存/重载）后回到高亮只读层。
+ * 文件正文：超大/二进制给提示；可编辑文件给「编辑」按钮切到叠层编辑器。
+ *
+ * 编辑态保持与只读态同一套「行号 + 语法高亮」外观：底层只读 `<pre>`（Host 下发的
+ * shiki token；Markdown 为正文纯文本），上层透明 `<textarea>` 负责输入与原生撤销栈。
+ * Markdown 的编辑态用正文而非渲染块，只读态仍是渲染块；草稿 `dirty` 时只读态也给
+ * 「编辑」按钮，避免用户既看不到改动也没法继续改。
  */
-function FileBody({ draft, t, focusLine, onChange }) {
+function FileBody({ draft, t, focusLine, onChange, scrollKey }) {
   const [editing, setEditing] = React.useState(false)
-  const areaRef = React.useRef(null)
-  React.useEffect(() => {
-    if (!editing || !areaRef.current) return
-    areaRef.current.focus()
-    if (draft.sel) {
-      try { areaRef.current.setSelectionRange(draft.sel.start, draft.sel.end) } catch { /* 选区越界忽略 */ }
-    }
-  }, [editing])
 
   if (draft.tooLarge) return h(Notice, null, t('fileTooLarge'))
   if (draft.binary) return h(Notice, null, t('binaryFile'))
-  if (draft.isDoc && !editing) return h('div', { className: 'sawb-panel' }, h(Markdown, { blocks: draft.blocks }))
+  if (draft.isDoc && !editing) {
+    return h('div', { className: 'sawb-panel' },
+      draft.canEdit
+        ? h('div', { className: 'sawb-banner' },
+            h('button', { type: 'button', className: 'sawb-btn', onClick: () => setEditing(true) }, t('editMarkdown')),
+            draft.dirty ? badge(t('editing'), 'live') : null,
+            h('span', { className: 'sawb-meta' }, t('previewMode')))
+        : h('div', { className: 'sawb-banner' }, badge(t('notEditable'), 'muted')),
+      h(Markdown, { blocks: draft.blocks }))
+  }
 
   if (!draft.canEdit) {
     return h(React.Fragment, null,
@@ -467,34 +588,20 @@ function FileBody({ draft, t, focusLine, onChange }) {
   if (!editing) {
     return h(React.Fragment, null,
       h('div', { className: 'sawb-banner' },
-        h('button', { type: 'button', className: 'sawb-btn', onClick: () => setEditing(true) }, t('edit')),
+        h('button', { type: 'button', className: 'sawb-btn', onClick: () => setEditing(true) }, draft.isDoc ? t('editMarkdown') : t('edit')),
         draft.dirty ? badge(t('editing'), 'live') : null),
       h('div', { className: 'sawb-code-wrap' }, h(CodeViewLines, { text: draft.text, tokens: draft.tokens, focusLine })))
   }
 
-  return h('div', { className: 'sawb-code-wrap' },
-    h('div', { className: 'sawb-editor-stack' },
-      h('textarea', {
-        ref: areaRef,
-        className: 'sawb-edit-area',
-        spellCheck: false,
-        wrap: 'off',
-        value: draft.text,
-        'aria-label': draft.path,
-        onChange: event => onChange(event.target.value, { start: event.target.selectionStart, end: event.target.selectionEnd }),
-        onKeyDown: event => {
-          // Tab 插两个空格；不拦截其他键，保留浏览器原生撤销栈。
-          if (event.key !== 'Tab' || event.shiftKey || event.altKey) return
-          event.preventDefault()
-          const area = event.currentTarget
-          const start = area.selectionStart
-          const end = area.selectionEnd
-          const text = `${draft.text.slice(0, start)}  ${draft.text.slice(end)}`
-          onChange(text, { start: start + 2, end: start + 2 })
-          Promise.resolve().then(() => {
-            if (areaRef.current) areaRef.current.setSelectionRange(start + 2, start + 2)
-          })
-        },
-        onSelect: event => onChange(draft.text, { start: event.target.selectionStart, end: event.target.selectionEnd }),
-      })))
+  return h(React.Fragment, null,
+    h('div', { className: 'sawb-banner' },
+      badge(t('editingMode'), 'live'),
+      h('span', { className: 'sawb-meta' }, t('editHint')),
+      h('span', { className: 'sawb-spacer' }),
+      draft.isDoc ? h('button', { type: 'button', className: 'sawb-btn', onClick: () => setEditing(false) }, t('previewMode')) : null),
+    h(CodeEditor, {
+      t, draft, scrollKey: scrollKey || draft.path,
+      onText: (text, sel) => onChange(text, sel),
+      onSel: sel => onChange(draft.text, sel),
+    }))
 }

@@ -38,6 +38,12 @@ const SAWB_ZH = {
   "confirmSave": "确认保存？",
   "draftKept": "有未保存的改动，先保存或取消。",
   "edit": "编辑",
+  "editMarkdown": "编辑源文",
+  "editingMode": "编辑中",
+  "editHint": "Tab 插入两个空格；Ctrl/Cmd+Z 为浏览器原生撤销。",
+  "previewMode": "预览",
+  "docsReadOnlyHint": "当前为渲染预览，点「编辑源文」可改 Markdown 正文。",
+  "saving": "保存中…",
   "editConflict": "文件已被外部修改（{message}），请重载后重试。",
   "editing": "编辑中",
   "fileSwitcher": "文件",
@@ -130,6 +136,12 @@ const SAWB_EN = {
   "docsTreeHint": "Folders are collapsed by default; expand level by level.",
   "draftKept": "Unsaved changes; save or cancel first.",
   "edit": "Edit",
+  "editMarkdown": "Edit source",
+  "editingMode": "Editing",
+  "editHint": "Tab inserts two spaces; Ctrl/Cmd+Z uses the native undo stack.",
+  "previewMode": "Preview",
+  "docsReadOnlyHint": "Rendered preview; click \"Edit source\" to change the Markdown.",
+  "saving": "Saving…",
   "editConflict": "File changed outside this editor ({message}); reload and retry.",
   "editing": "Editing",
   "emptyTree": "This directory is empty.",
@@ -323,9 +335,23 @@ const SAWB_CSS = `
 .sawb-float { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; width: min(420px, 70vw); max-height: 60vh; display: flex; flex-direction: column; background: var(--dsw-alias-bg-base); border: 1px solid var(--dsw-alias-border-l2); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.18); overflow: hidden; }
 .sawb-float-body { overflow: auto; padding: 4px 0 8px; }
 /* 编辑容器：横竖双向滚动（横向交给 textarea 自身，纵向由列 flex 撑满），不再限制父级宽高。 */
-.sawb-editor-stack { display: flex; flex-direction: column; width: 100%; box-sizing: border-box; font-family: var(--dsw-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: 12px; line-height: 1.55; tab-size: 2; }
-.sawb-edit-area { flex: 1 1 auto; width: 100%; box-sizing: border-box; border: 1px solid var(--dsw-alias-border-l2); background: var(--dsw-alias-bg-base); color: var(--dsw-alias-label-primary); font: inherit; font-size: 13px; line-height: 1.6; padding: 10px 12px; resize: vertical; white-space: pre; overflow: auto; min-height: max(320px, calc(100vh - 320px)); max-height: none; tab-size: 2; }
-.sawb-edit-area:focus-visible { outline: 2px solid var(--dsw-alias-brand-primary); outline-offset: 0; }
+/* 编辑器叠层：行号槽与高亮层共用一组度量，透明 textarea 浮在 token 之上。
+   三者 font/padding/line-height/tab-size 必须一致，否则光标与下方字符错位；
+   边框只画在外层 .sawb-ov，textarea 自身无边框无背景。 */
+.sawb-editor-stack { display: flex; flex-direction: column; width: 100%; box-sizing: border-box; background: var(--dsw-alias-bg-base); }
+.sawb-ov { display: grid; grid-template-columns: 54px 1fr; min-height: max(360px, calc(100vh - 340px)); border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; background: var(--dsw-alias-bg-base); overflow: hidden; }
+.sawb-ov-gutter { overflow: hidden; background: var(--dsw-alias-bg-layer-1); border-right: 1px solid var(--dsw-alias-border-l1); user-select: none; }
+.sawb-ov-gutter-inner { padding: 10px 0; }
+.sawb-ov-line-no, .sawb-ov-pre, .sawb-ov-area { font-family: var(--dsw-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: 12px; line-height: 1.55; tab-size: 2; }
+.sawb-ov-line-no { text-align: right; padding: 0 10px 0 4px; color: var(--dsw-alias-state-idle-primary); }
+.sawb-ov-main { position: relative; min-width: 0; overflow: hidden; }
+.sawb-ov-pre, .sawb-ov-area { position: absolute; inset: 0; margin: 0; border: 0; padding: 10px 12px; box-sizing: border-box; white-space: pre; overflow: auto; }
+.sawb-ov-pre { pointer-events: none; color: var(--dsw-alias-label-primary); }
+.sawb-ov-line { display: block; min-width: max-content; }
+.sawb-ov-area { width: 100%; height: 100%; resize: none; background: transparent; color: transparent; caret-color: var(--dsw-alias-label-primary); outline: none; }
+.sawb-ov-area::selection { background: var(--dsw-alias-brand-primary); }
+.sawb-ov-status { display: flex; gap: 12px; align-items: center; padding: 4px 10px; border: 1px solid var(--dsw-alias-border-l1); border-top: 0; border-radius: 0 0 8px 8px; background: var(--dsw-alias-bg-layer-1); color: var(--dsw-alias-label-secondary); font-size: 11px; }
+.sawb-ov-lang { margin-left: auto; }
 .sawb-banner { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 10px; padding: 6px 10px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 8px; background: var(--dsw-alias-bg-layer-2); font-size: 12px; }
 `
 
@@ -779,8 +805,9 @@ window.__ModuleLoader__.load({
     /**
      * 工作区页与文档页（自 A 段原样迁移，接口行为未变）。
      *
-     * 这两页不涉及写能力：工作区页只读 workspaceRegistry，文档页只读 Markdown
-     * 索引与 blob。迁移时只调整了函数顺序，渲染逻辑逐行保持不变。
+     * 工作区页只读 workspaceRegistry。文档页读取 Markdown 索引与 blob；
+     * blob 带 `editable` 时文档页可按「编辑源文」直接改 Markdown（写路径复用
+     * `POST /api/write`、`expectMtimeMs` 乐观锁，编辑器复用 `EditorPane` 高亮叠层）。
      */
 
     /** 把 flat docs 构造成目录树；只在前端派生，不改变 Host 返回结构。 */
@@ -827,6 +854,7 @@ window.__ModuleLoader__.load({
       const [route, setRoute] = React.useState({ kind: 'repos', repo: undefined })
       const [state, setState] = React.useState({ phase: 'loading', repos: [], groups: [], error: '' })
       const [doc, setDoc] = React.useState({ phase: 'idle', repo: undefined, data: undefined, error: '' })
+      const [edit, setEdit] = React.useState({ on: false, text: '', baseText: '', sel: null, mtimeMs: 0, notice: '', error: false, saving: false })
       const [repoPage, setRepoPage] = React.useState(1)
       const [repoTotal, setRepoTotal] = React.useState(0)
 
@@ -850,10 +878,40 @@ window.__ModuleLoader__.load({
 
       const openDoc = (repo, path) => {
         setDoc({ phase: 'loading', repo, data: undefined, error: '' })
+        setEdit({ on: false, text: '', baseText: '', sel: null, mtimeMs: 0, notice: '', error: false, saving: false })
         const controller = new AbortController()
         loadApi({ view: 'blob', repo: repo.id, path }, controller.signal)
           .then(data => setDoc({ phase: 'ready', repo, data, error: '' }))
           .catch(error => setDoc({ phase: 'error', repo, data: undefined, error: errorText(error) }))
+      }
+
+      /** 重新取一次 blob：保存后用磁盘内容刷新预览块与高亮 token。 */
+      const refreshDoc = () => loadApi({ view: 'blob', repo: doc.repo.id, path: doc.data.path })
+        .then(data => setDoc(previous => ({ ...previous, data })))
+        .catch(error => setEdit(previous => ({ ...previous, notice: t('readFailed', { message: errorText(error) }), error: true })))
+
+      /** 保存 Markdown：两步确认 → `POST /api/write`（`expectMtimeMs` 乐观锁）→ 刷新预览块。 */
+      const saveDoc = () => {
+        if (!doc.data || !edit.on) return
+        if (!window.confirm(t('confirmSave'))) return
+        setEdit(previous => ({ ...previous, saving: true }))
+        postApi('/write', {
+          repo: doc.repo.id, path: doc.data.path, text: edit.text, expectMtimeMs: edit.mtimeMs,
+        })
+          .then(data => {
+            setEdit(previous => ({
+              ...previous, saving: false, mtimeMs: data.mtimeMs, baseText: previous.text,
+              notice: t('saveDone'), error: false,
+            }))
+            return refreshDoc()
+          })
+          .catch(failure => {
+            const conflict = Number(failure && failure.status) === 409
+            setEdit(previous => ({
+              ...previous, saving: false, error: true,
+              notice: conflict ? t('editConflict', { message: errorText(failure) }) : t('saveFailed', { message: errorText(failure) }),
+            }))
+          })
       }
 
       if (doc.phase !== 'idle') {
@@ -870,10 +928,49 @@ window.__ModuleLoader__.load({
                 : h(React.Fragment, null,
                     h('div', { className: 'sawb-file-head' },
                       h('h2', { className: 'sawb-detail-title' }, doc.data.path.split('/').pop()),
-                      badge(doc.data.path, 'muted')),
+                      badge(doc.data.path, 'muted'),
+                      h('span', { className: 'sawb-spacer' }),
+                      doc.data.editable && !doc.data.tooLarge
+                        ? (edit.on
+                            ? h(React.Fragment, null,
+                                edit.notice ? h(Notice, { tone: edit.error ? 'error' : undefined }, edit.notice) : null,
+                                h('button', { type: 'button', className: 'sawb-btn', onClick: () => setEdit(previous => ({
+                                  ...previous, on: false,
+                                  // 退出编辑保留草稿：再次点「编辑源文」可继续改
+                                })) }, t('previewMode')),
+                                h('button', {
+                                  type: 'button', className: 'sawb-btn', disabled: edit.saving || edit.text === edit.baseText,
+                                  onClick: () => saveDoc(),
+                                }, edit.saving ? t('saving') : t('save')))
+                            : h('button', {
+                                type: 'button', className: 'sawb-btn',
+                                // 注意：这里是对象字面量，不能写 `sel: null` 之外的简写；
+                                // 早期误写成 `sel`（省略键名）导致运行期 ReferenceError: sel is not defined，
+                                // 点「编辑源文」直接崩掉整个面板（slot entry crashed）。
+                                onClick: () => setEdit({
+                                  on: true, text: doc.data.text || '', baseText: doc.data.text || '',
+                                  sel: null, mtimeMs: doc.data.mtimeMs || 0, notice: '', error: false, saving: false,
+                                }),
+                              }, t('editMarkdown')))
+                        : null,
+                      doc.data.editable ? null : badge(t('notEditable'), 'muted')),
                     doc.data.tooLarge
                       ? h(Notice, null, t('fileTooLarge'))
-                      : h('div', { className: 'sawb-panel' }, h(Markdown, { blocks: doc.data.blocks })))))
+                      : edit.on
+                        ? h('div', { className: 'sawb-code-wrap' },
+                            h(EditorPane, {
+                              // tokens/lang 必须来自 blob（Host 侧 shiki 结果）：早期写死
+                              // `tokens: null, lang: ''`，文档编辑态只有纯白字、无任何着色。
+                              t, value: edit.text, tokens: doc.data.tokens, lang: doc.data.lang, scrollKey: doc.data.path,
+                              selection: edit.sel,
+                              onText: (text, sel) => setEdit(previous => ({ ...previous, text, sel })),
+                              onSel: sel => setEdit(previous => ({ ...previous, sel })),
+                            }))
+                        : h(React.Fragment, null,
+                            h('div', { className: 'sawb-banner' },
+                              badge(t('previewMode'), 'muted'),
+                              h('span', { className: 'sawb-meta' }, t('docsReadOnlyHint'))),
+                            h('div', { className: 'sawb-panel' }, h(Markdown, { blocks: doc.data.blocks }))))))
       }
 
       if (route.kind === 'repos') {
@@ -981,13 +1078,127 @@ window.__ModuleLoader__.load({
      * - `FileSwitcher`：文件页左上「☰ 文件」按钮 + 浮动面板（悬停 200ms 浮出、移出 150ms 收起，
      *   点击即钉住；面板内 `Alt+1` 可收起且不抢 DSH 全局快捷键）；
      * - `EditorTabs`：打开标签条，同仓库最多 `EDITOR_MAX_TABS` 个，切走时保留草稿与光标；
-     * - `EditorShell` / `FileBody`：只读与编辑两态。编辑是原生 `<textarea>`（Tab 插两空格），
-     *   保存走 `POST /api/write`（`expectMtimeMs` 乐观锁），撤销走 `POST /api/revert`。
+     * - `EditorShell` / `FileBody`：只读与编辑两态。编辑走 `MarkdownEditor` / `CodeEditor`
+     *   （原生 `<textarea>` + 只读高亮叠层，Tab 插两空格），保存走 `POST /api/write`
+     *   （`expectMtimeMs` 乐观锁），撤销走 `POST /api/revert`。
      *
      * 状态全部在 `EditorShell`：切仓库即清空标签与草稿（有未保存先确认），不做跨仓库多开。
+     * 编辑器本体（`EditorPane` 及叠层、行号）放在本段，供代码页与文档页共用。
      */
 
     const EDITOR_MAX_TABS = 8
+
+    /**
+     * 编辑器共用外壳：行号槽 + 叠层（底层只读高亮 `<pre>`、上层透明 `<textarea>`）。
+     *
+     * 两层字体、字号、行高、padding、tab-size 必须完全一致（样式在 `client/theme.js`
+     * `.sawb-ov-pre` / `.sawb-ov-area` 共用一组声明），否则光标与字符会错位。
+     * 高亮 token 缺失（Host 取不到 shiki）时底层只渲染纯文本，编辑仍可用，等同一层。
+     */
+    function EditorPane({ t, value, tokens, lang, scrollKey, selection, onText, onSel }) {
+      const scrollRef = React.useRef(null)
+      const gutterRef = React.useRef(null)
+      const preRef = React.useRef(null)
+      const areaRef = React.useRef(null)
+      const [count, setCount] = React.useState(0)
+      const [caret, setCaret] = React.useState({ line: 1 })
+      const [, forceRepaint] = React.useState(0)
+
+      const text = String(value == null ? '' : value)
+      React.useEffect(() => { setCount(text.length) }, [text])
+
+      // 进入编辑态（含切标签）时聚焦并把光标还原到草稿记下的位置；`caret` 不能进依赖，
+      // 否则每次按键移动光标都会抢焦点、重置输入法组合。
+      // `selection` 必须显式取 props：早期写成裸 `sel`（未声明变量），进编辑态即
+      // `ReferenceError: sel is not defined`，整个面板被 React 卸载。
+      React.useEffect(() => {
+        const area = areaRef.current
+        if (!area) return
+        area.focus()
+        if (!selection) return
+        try { area.setSelectionRange(selection.start, selection.end) } catch { /* 选区越界忽略 */ }
+      }, [scrollKey])
+
+      /** 叠层同步：把 textarea 的滚动同时给高亮层与行号槽；宽度变化时重算行号。 */
+      const sync = () => {
+        const area = areaRef.current
+        if (!area) return
+        if (preRef.current) {
+          preRef.current.scrollTop = area.scrollTop
+          preRef.current.scrollLeft = area.scrollLeft
+        }
+        if (gutterRef.current) gutterRef.current.scrollTop = area.scrollTop
+        const line = area.value.slice(0, area.selectionStart).split('\n').length
+        setCaret(previous => (previous.line === line ? previous : { line }))
+      }
+      React.useEffect(() => {
+        sync()
+        if (!scrollRef.current || typeof ResizeObserver !== 'function') return undefined
+        const observer = new ResizeObserver(() => forceRepaint(at => at + 1))
+        observer.observe(scrollRef.current)
+        return () => observer.disconnect()
+      }, [scrollKey])
+
+      // 行号槽按当前行数生成（与只读视图同样的 1..n 序列）。
+      const lines = text.split('\n').length
+      const numbers = []
+      for (let index = 1; index <= lines; index += 1) numbers.push(index)
+
+      const remember = event => {
+        onSel({ start: event.target.selectionStart, end: event.target.selectionEnd })
+      }
+
+      return h('div', { className: 'sawb-editor-stack', ref: scrollRef },
+        h('div', { className: 'sawb-ov' },
+          h('div', { className: 'sawb-ov-gutter' },
+            h('div', { className: 'sawb-ov-gutter-inner', ref: gutterRef },
+              numbers.map(number => h('div', { key: number, className: 'sawb-ov-line-no' }, String(number))))),
+          h('div', { className: 'sawb-ov-main' },
+            h('pre', { className: 'sawb-ov-pre', ref: preRef, 'aria-hidden': true },
+              Array.isArray(tokens) && tokens.length
+                ? tokens.map((line, index) => h('span', { key: index, className: 'sawb-ov-line' },
+                    (line && line.length ? line : [['', '']]).map((token, at) =>
+                      h('span', { key: at, style: tokenColor(token[1]) }, token[0] || ' '))))
+                : text.split('\n').map((line, index) => h('span', { key: index, className: 'sawb-ov-line' }, line || ' '))),
+            h('textarea', {
+              ref: areaRef,
+              className: 'sawb-ov-area',
+              spellCheck: false,
+              wrap: 'off',
+              value: text,
+              'aria-label': lang || t('edit'),
+              onChange: event => onText(event.target.value, { start: event.target.selectionStart, end: event.target.selectionEnd }),
+              onScroll: sync,
+              onSelect: event => { remember(event); sync() },
+              onClick: sync,
+              onKeyUp: sync,
+              onKeyDown: event => {
+                // Tab 插两个空格；不拦截其他键，保留浏览器原生撤销栈。
+                if (event.key !== 'Tab' || event.shiftKey || event.altKey) return
+                event.preventDefault()
+                const area = event.currentTarget
+                const start = area.selectionStart
+                const end = area.selectionEnd
+                onText(`${text.slice(0, start)}  ${text.slice(end)}`, { start: start + 2, end: start + 2 })
+                Promise.resolve().then(() => {
+                  if (areaRef.current) {
+                    areaRef.current.setSelectionRange(start + 2, start + 2)
+                    sync()
+                  }
+                })
+              },
+            }))),
+        h('div', { className: 'sawb-ov-status' },
+          h('span', null, `${count} 字符 · ${lines} 行 · 第 ${caret.line} 行`),
+          lang ? h('span', { className: 'sawb-ov-lang' }, lang) : null))
+    }
+
+
+    /** 代码文件编辑：高亮叠层 + 行号；`tokens` 为 Host 下发的 shiki token。 */
+    function CodeEditor({ t, draft, onText, onSel, scrollKey }) {
+      return h('div', { className: 'sawb-code-wrap' },
+        h(EditorPane, { t, value: draft.text, tokens: draft.tokens, lang: draft.lang, scrollKey, selection: draft.sel, onText, onSel }))
+    }
 
     function parentPath(path) {
       const text = String(path || '')
@@ -1396,6 +1607,7 @@ window.__ModuleLoader__.load({
             h('span', { className: 'sawb-spacer' }),
             draft && draft.canEdit
               ? h(React.Fragment, null,
+                  draft.dirty ? badge(t('editing'), 'live') : null,
                   h('button', { type: 'button', className: 'sawb-btn', disabled: !draft.dirty, onClick: reload }, t('reload')),
                   h('button', { type: 'button', className: 'sawb-btn', onClick: revert }, t('revert')),
                   h('button', { type: 'button', className: 'sawb-btn sawb-btn-primary', disabled: !draft.dirty, onClick: save }, t('save')))
@@ -1411,28 +1623,34 @@ window.__ModuleLoader__.load({
           loading && !draft
             ? h('div', { className: 'sawb-empty' }, t('loadingData'))
             : draft
-              ? h(FileBody, { key: draft.path, draft, t, focusLine, onChange: (text, sel) => patchDraft({ text, sel, dirty: text !== draft.baseText }) })
+              ? h(FileBody, { key: draft.path, draft, t, focusLine, scrollKey: draft.path,
+                  onChange: (text, sel) => patchDraft({ text, sel, dirty: text !== draft.baseText }) })
               : null))
     }
 
     /**
-     * 文件正文：超大/二进制给提示；可编辑文件给「编辑」按钮切到 textarea。
-     * 编辑态只显示 textarea：保证原生输入法、撤销栈与性能；退出编辑（保存/重载）后回到高亮只读层。
+     * 文件正文：超大/二进制给提示；可编辑文件给「编辑」按钮切到叠层编辑器。
+     *
+     * 编辑态保持与只读态同一套「行号 + 语法高亮」外观：底层只读 `<pre>`（Host 下发的
+     * shiki token；Markdown 为正文纯文本），上层透明 `<textarea>` 负责输入与原生撤销栈。
+     * Markdown 的编辑态用正文而非渲染块，只读态仍是渲染块；草稿 `dirty` 时只读态也给
+     * 「编辑」按钮，避免用户既看不到改动也没法继续改。
      */
-    function FileBody({ draft, t, focusLine, onChange }) {
+    function FileBody({ draft, t, focusLine, onChange, scrollKey }) {
       const [editing, setEditing] = React.useState(false)
-      const areaRef = React.useRef(null)
-      React.useEffect(() => {
-        if (!editing || !areaRef.current) return
-        areaRef.current.focus()
-        if (draft.sel) {
-          try { areaRef.current.setSelectionRange(draft.sel.start, draft.sel.end) } catch { /* 选区越界忽略 */ }
-        }
-      }, [editing])
 
       if (draft.tooLarge) return h(Notice, null, t('fileTooLarge'))
       if (draft.binary) return h(Notice, null, t('binaryFile'))
-      if (draft.isDoc && !editing) return h('div', { className: 'sawb-panel' }, h(Markdown, { blocks: draft.blocks }))
+      if (draft.isDoc && !editing) {
+        return h('div', { className: 'sawb-panel' },
+          draft.canEdit
+            ? h('div', { className: 'sawb-banner' },
+                h('button', { type: 'button', className: 'sawb-btn', onClick: () => setEditing(true) }, t('editMarkdown')),
+                draft.dirty ? badge(t('editing'), 'live') : null,
+                h('span', { className: 'sawb-meta' }, t('previewMode')))
+            : h('div', { className: 'sawb-banner' }, badge(t('notEditable'), 'muted')),
+          h(Markdown, { blocks: draft.blocks }))
+      }
 
       if (!draft.canEdit) {
         return h(React.Fragment, null,
@@ -1443,36 +1661,22 @@ window.__ModuleLoader__.load({
       if (!editing) {
         return h(React.Fragment, null,
           h('div', { className: 'sawb-banner' },
-            h('button', { type: 'button', className: 'sawb-btn', onClick: () => setEditing(true) }, t('edit')),
+            h('button', { type: 'button', className: 'sawb-btn', onClick: () => setEditing(true) }, draft.isDoc ? t('editMarkdown') : t('edit')),
             draft.dirty ? badge(t('editing'), 'live') : null),
           h('div', { className: 'sawb-code-wrap' }, h(CodeViewLines, { text: draft.text, tokens: draft.tokens, focusLine })))
       }
 
-      return h('div', { className: 'sawb-code-wrap' },
-        h('div', { className: 'sawb-editor-stack' },
-          h('textarea', {
-            ref: areaRef,
-            className: 'sawb-edit-area',
-            spellCheck: false,
-            wrap: 'off',
-            value: draft.text,
-            'aria-label': draft.path,
-            onChange: event => onChange(event.target.value, { start: event.target.selectionStart, end: event.target.selectionEnd }),
-            onKeyDown: event => {
-              // Tab 插两个空格；不拦截其他键，保留浏览器原生撤销栈。
-              if (event.key !== 'Tab' || event.shiftKey || event.altKey) return
-              event.preventDefault()
-              const area = event.currentTarget
-              const start = area.selectionStart
-              const end = area.selectionEnd
-              const text = `${draft.text.slice(0, start)}  ${draft.text.slice(end)}`
-              onChange(text, { start: start + 2, end: start + 2 })
-              Promise.resolve().then(() => {
-                if (areaRef.current) areaRef.current.setSelectionRange(start + 2, start + 2)
-              })
-            },
-            onSelect: event => onChange(draft.text, { start: event.target.selectionStart, end: event.target.selectionEnd }),
-          })))
+      return h(React.Fragment, null,
+        h('div', { className: 'sawb-banner' },
+          badge(t('editingMode'), 'live'),
+          h('span', { className: 'sawb-meta' }, t('editHint')),
+          h('span', { className: 'sawb-spacer' }),
+          draft.isDoc ? h('button', { type: 'button', className: 'sawb-btn', onClick: () => setEditing(false) }, t('previewMode')) : null),
+        h(CodeEditor, {
+          t, draft, scrollKey: scrollKey || draft.path,
+          onText: (text, sel) => onChange(text, sel),
+          onSel: sel => onChange(draft.text, sel),
+        }))
     }
     // ======== 注入结束 ========
     // `h` 在 highlight 段里定义（与各 view 段同为工厂内函数），这里直接使用。

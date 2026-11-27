@@ -80,5 +80,11 @@
   "workspaceMissing": "Directory missing",
   "workspacePath": "Path",
   "workspacesHint": "These records come from the current DSH Host workspaceRegistry, the only writer.",
-  "workspacesTitle": "Workspaces"
+  "workspacesTitle": "Workspaces",
+  "editMarkdown": "Edit source",
+  "editingMode": "Editing",
+  "editHint": "Tab inserts two spaces; Ctrl/Cmd+Z uses the native undo stack.",
+  "previewMode": "Preview",
+  "docsReadOnlyHint": "Rendered preview; click \"Edit source\" to change the Markdown.",
+  "saving": "Saving…"
 }
