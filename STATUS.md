@@ -4,7 +4,7 @@
 - 版本：`0.2.0`（本地开发中，按 `PLAN-dsh-workbench-panel-ide.md` 实施；npm `latest` 仍是只读的 `0.1.1`，发版由用户确认后执行）
 - 一句话：DSH 可看可改工作台，三页签查看工作区、Markdown 文档与仓库代码（面板不展示会话），支持仓库内搜索、语法高亮、单文件编辑（`writeEnabled`）与显式归档会话。
 - 位置：`/home/zh/www/dsh-workbench-panel`；包名 `dsh-workbench-panel`；公开仓 <https://github.com/person-clouds/dsh-workbench-panel>。
-- 计划：[`PLAN-dsh-workbench-panel-ide.md`](/home/zh/www/doc/plans/PLAN-dsh-workbench-panel-ide.md)、[`PLAN-dsh-workbench-panel.md`](/home/zh/www/doc/plans/PLAN-dsh-workbench-panel.md)、[`SPEC.md`](/home/zh/www/dsh-workbench-panel/SPEC.md)
+- 计划：[`PLAN-dsh-workbench-panel-ide.md`](/home/zh/www/personalCloud/plans/doc/PLAN-dsh-workbench-panel-ide.md)、[`PLAN-dsh-workbench-panel.md`](/home/zh/www/personalCloud/plans/doc/PLAN-dsh-workbench-panel.md)、[`SPEC.md`](/home/zh/www/dsh-workbench-panel/SPEC.md)
 
 ## 0.2.0 能力
 

@@ -13,7 +13,7 @@ status: current
 2. [`SPEC.md`](/home/zh/www/dsh-workbench-panel/SPEC.md)：目标、范围、接口、非目标与验收；
 3. [`README.md`](/home/zh/www/dsh-workbench-panel/README.md)：三页签、数据来源、安装、配置与安全边界；
 4. [`STATUS.md`](/home/zh/www/dsh-workbench-panel/STATUS.md)：版本状态与待办；
-5. 跨仓计划：[`PLAN-dsh-workbench-panel.md`](/home/zh/www/doc/plans/PLAN-dsh-workbench-panel.md)。
+5. 跨仓计划：[`PLAN-dsh-workbench-panel.md`](/home/zh/www/personalCloud/plans/doc/PLAN-dsh-workbench-panel.md)。
 
 ## 1. 硬约束
 

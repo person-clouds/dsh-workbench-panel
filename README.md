@@ -79,7 +79,7 @@ dsh plugin --profile web add dsh-workbench-panel
 ## 去哪看
 
 - 状态、能力清单与验收命令：[STATUS.md](/home/zh/www/dsh-workbench-panel/STATUS.md)
-- 方向与选型记录：[PLAN-dsh-workbench-panel-ide.md](/home/zh/www/doc/plans/PLAN-dsh-workbench-panel-ide.md)
+- 方向与选型记录：[PLAN-dsh-workbench-panel-ide.md](/home/zh/www/personalCloud/plans/doc/PLAN-dsh-workbench-panel-ide.md)
 - 发布、Release 与市场 PR：[PUBLISHING.md](/home/zh/www/dsh-workbench-panel/PUBLISHING.md)
 - 市场条目：[market/person-clouds__dsh-workbench-panel.yml](/home/zh/www/dsh-workbench-panel/market/person-clouds__dsh-workbench-panel.yml)
 - 许可证：[MIT](LICENSE)
